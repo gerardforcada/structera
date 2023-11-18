@@ -144,42 +144,42 @@ func formatFieldType(expr ast.Expr, pointer bool) string {
 	return result
 }
 
-func generateDemoMethods(structName string, versionNumbers []int) string {
+func generateMethods(structName string, lowerCaseStructName string, versionNumbers []int) string {
 	var buf strings.Builder
-	buf.WriteString(fmt.Sprintf("func (d %s) GetVersionStructs() []version.Versioned[demo.Version] {\n", structName))
-	buf.WriteString("\treturn []version.Versioned[demo.Version]{\n")
+	buf.WriteString(fmt.Sprintf("func (d %s) GetVersionStructs() []version.Versioned[%s.Version] {\n", structName, lowerCaseStructName))
+	buf.WriteString(fmt.Sprintf("\treturn []version.Versioned[%s.Version]{\n", lowerCaseStructName))
 	for _, v := range versionNumbers {
-		buf.WriteString(fmt.Sprintf("\t\tDemoV%d{},\n", v))
+		buf.WriteString(fmt.Sprintf("\t\t%sV%d{},\n", structName, v))
 	}
 	buf.WriteString("\t}\n}\n\n")
 
 	buf.WriteString(fmt.Sprintf("func (d %s) GetBaseStruct() interface{} {\n", structName))
 	buf.WriteString("\treturn d.PointerFields\n}\n\n")
 
-	buf.WriteString(fmt.Sprintf("func (d %s) DetectVersion() demo.Version {\n", structName))
-	buf.WriteString("\treturn version.DetectBestMatch[demo.Version, Demo](d)\n}\n\n")
+	buf.WriteString(fmt.Sprintf("func (d %s) DetectVersion() %s.Version {\n", structName, lowerCaseStructName))
+	buf.WriteString(fmt.Sprintf("\treturn version.DetectBestMatch[%s.Version, %s](d)\n}\n\n", lowerCaseStructName, structName))
 
-	buf.WriteString(fmt.Sprintf("func (d %s) GetVersions() []demo.Version {\n", structName))
-	buf.WriteString("\treturn []demo.Version{\n")
+	buf.WriteString(fmt.Sprintf("func (d %s) GetVersions() []%s.Version {\n", structName, lowerCaseStructName))
+	buf.WriteString(fmt.Sprintf("\treturn []%s.Version{\n", lowerCaseStructName))
 	for _, v := range versionNumbers {
-		buf.WriteString(fmt.Sprintf("\t\tdemo.Version%d,\n", v))
+		buf.WriteString(fmt.Sprintf("\t\t%s.Version%d,\n", lowerCaseStructName, v))
 	}
 	buf.WriteString("\t}\n}\n\n")
 
-	buf.WriteString(fmt.Sprintf("func (d %s) GetMinVersion() demo.Version {\n", structName))
-	buf.WriteString("\treturn demo.Version1\n}\n\n")
+	buf.WriteString(fmt.Sprintf("func (d %s) GetMinVersion() %s.Version {\n", structName, lowerCaseStructName))
+	buf.WriteString(fmt.Sprintf("\treturn %s.Version1\n}\n\n", lowerCaseStructName))
 
 	maxVersion := versionNumbers[len(versionNumbers)-1]
-	buf.WriteString(fmt.Sprintf("func (d %s) GetMaxVersion() demo.Version {\n", structName))
-	buf.WriteString(fmt.Sprintf("\treturn demo.Version%d\n}\n\n", maxVersion))
+	buf.WriteString(fmt.Sprintf("func (d %s) GetMaxVersion() %s.Version {\n", structName, lowerCaseStructName))
+	buf.WriteString(fmt.Sprintf("\treturn %s.Version%d\n}\n\n", lowerCaseStructName, maxVersion))
 
 	return buf.String()
 }
 
-func generateVersionMethods(version int) string {
+func generateVersionMethods(structName, lowerCaseStructName string, version int) string {
 	var buf strings.Builder
-	buf.WriteString(fmt.Sprintf("func (d DemoV%d) GetVersion() demo.Version {\n", version))
-	buf.WriteString(fmt.Sprintf("\treturn demo.Version%d\n}\n\n", version))
+	buf.WriteString(fmt.Sprintf("func (d %sV%d) GetVersion() %s.Version {\n", structName, version, lowerCaseStructName))
+	buf.WriteString(fmt.Sprintf("\treturn %s.Version%d\n}\n\n", lowerCaseStructName, version))
 
 	return buf.String()
 }
@@ -196,6 +196,8 @@ func generateVersionedStructs(fileName, structName, outputDir string) error {
 		imports = append(imports, strings.Trim(i.Path.Value, "\""))
 	}
 
+	lowerCaseStructName := strings.ToLower(structName)
+
 	goModPath, err := findGoModPath(filepath.Dir(fileName))
 	if err != nil {
 		return fmt.Errorf("error finding go.mod: %v", err)
@@ -210,7 +212,7 @@ func generateVersionedStructs(fileName, structName, outputDir string) error {
 	if err != nil {
 		return err
 	}
-	demoImportPath := path.Join(baseImportPath, relativePath, "versioned", "demo")
+	importPath := path.Join(baseImportPath, relativePath, "versioned", lowerCaseStructName)
 
 	for _, f := range node.Decls {
 		genDecl, ok := f.(*ast.GenDecl)
@@ -249,7 +251,7 @@ func generateVersionedStructs(fileName, structName, outputDir string) error {
 				return err
 			}
 
-			versionedStructsCode, err := processStruct(structName, structType, imports, demoImportPath)
+			versionedStructsCode, err := processStruct(structName, lowerCaseStructName, structType, imports, importPath)
 			if err != nil {
 				return err
 			}

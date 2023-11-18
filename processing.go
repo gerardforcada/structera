@@ -130,7 +130,7 @@ func determineMaxVersion(versionTags []string) int {
 	return maxVersion
 }
 
-func processStruct(structName string, structType *ast.StructType, existingImports []string, demoImportPath string) (string, error) {
+func processStruct(structName string, lowerCaseStructName string, structType *ast.StructType, existingImports []string, importPath string) (string, error) {
 	versions := identifyVersions(structType)
 	if len(versions) == 0 {
 		return "", fmt.Errorf("no version tags found in struct")
@@ -147,7 +147,7 @@ func processStruct(structName string, structType *ast.StructType, existingImport
 	buf.WriteString("package versioned\n\n")
 	buf.WriteString("import (\n")
 	buf.WriteString(fmt.Sprintf("\t\"%s/version\"\n", LibraryPackage))
-	buf.WriteString(fmt.Sprintf("\t\"%s\"\n", demoImportPath)) // Add dynamic import path for demo
+	buf.WriteString(fmt.Sprintf("\t\"%s\"\n", importPath)) // Add dynamic import path
 
 	// Include existing imports from the original file
 	for _, imp := range existingImports {
@@ -155,19 +155,19 @@ func processStruct(structName string, structType *ast.StructType, existingImport
 	}
 	buf.WriteString(")\n\n")
 
-	// DemoVersions struct
-	buf.WriteString("type DemoVersions struct {\n")
+	// Versions struct
+	buf.WriteString(fmt.Sprintf("type %sVersions struct {\n", structName))
 	for _, v := range versionNumbers {
-		buf.WriteString(fmt.Sprintf("\tV%d demo.V%d[DemoV%d]\n", v, v, v))
+		buf.WriteString(fmt.Sprintf("\tV%d %s.V%d[%sV%d]\n", v, lowerCaseStructName, v, structName, v))
 	}
 	buf.WriteString("}\n\n")
 
-	// Demo struct
-	buf.WriteString("type Demo struct {\n\tdemo.PointerFields\n\tDemoVersions\n}\n\n")
+	// struct
+	buf.WriteString(fmt.Sprintf("type %s struct {\n\t%s.PointerFields\n\t%sVersions\n}\n\n", structName, lowerCaseStructName, structName))
 
 	// Initialize function
 	buf.WriteString(fmt.Sprintf("func (d *%s) Initialize() {\n", structName))
-	buf.WriteString("\td.DemoVersions = DemoVersions{\n")
+	buf.WriteString(fmt.Sprintf("\td.%sVersions = %sVersions{\n", structName, structName))
 
 	for _, v := range versionNumbers {
 		buf.WriteString(fmt.Sprintf("\t\tV%d: &%sV%d{},\n", v, structName, v))
@@ -175,8 +175,8 @@ func processStruct(structName string, structType *ast.StructType, existingImport
 
 	buf.WriteString("\t}\n}\n\n")
 
-	// Additional methods for Demo
-	buf.WriteString(generateDemoMethods(structName, versionNumbers))
+	// Additional methods for the struct
+	buf.WriteString(generateMethods(structName, lowerCaseStructName, versionNumbers))
 
 	// Version-specific struct types and methods
 	for _, v := range versionNumbers {
@@ -198,10 +198,10 @@ func processStruct(structName string, structType *ast.StructType, existingImport
 			}
 		}
 
-		buf.WriteString(fmt.Sprintf("type DemoV%d struct {\n", v))
+		buf.WriteString(fmt.Sprintf("type %sV%d struct {\n", structName, v))
 		buf.WriteString(formatStructFields(fields, tags))
 		buf.WriteString("}\n\n")
-		buf.WriteString(generateVersionMethods(v))
+		buf.WriteString(generateVersionMethods(structName, lowerCaseStructName, v))
 	}
 
 	return buf.String(), nil
