@@ -5,12 +5,15 @@ import (
 	"github.com/gerardforcada/structera/helpers"
 	"go/ast"
 	"reflect"
-	"sort"
 	"strconv"
 	"strings"
 )
 
-func identifyVersions(structType *ast.StructType) map[int][]string {
+type Version struct {
+	Versions map[int][]string
+}
+
+func (v *Version) IdentifyVersions(structType *ast.StructType) {
 	var allTags []string
 	// Collect all version tags from the struct fields
 	for _, field := range structType.Fields.List {
@@ -44,7 +47,7 @@ func identifyVersions(structType *ast.StructType) map[int][]string {
 		}
 	}
 
-	return versionMap
+	v.Versions = versionMap
 }
 
 func parseVersionTag(tag string, maxVersion int) []int {
@@ -130,79 +133,13 @@ func determineMaxVersion(versionTags []string) int {
 	return maxVersion
 }
 
-func processStruct(structName string, lowerCaseStructName string, structType *ast.StructType, existingImports []string, importPath string) (string, error) {
-	versions := identifyVersions(structType)
-	if len(versions) == 0 {
-		return "", fmt.Errorf("no version tags found in struct")
-	}
-
-	// Sort the version numbers
-	var versionNumbers []int
-	for v := range versions {
-		versionNumbers = append(versionNumbers, v)
-	}
-	sort.Ints(versionNumbers)
-
-	var buf strings.Builder
-	buf.WriteString("package versioned\n\n")
-	buf.WriteString("import (\n")
-	buf.WriteString(fmt.Sprintf("\t\"%s/version\"\n", LibraryPackage))
-	buf.WriteString(fmt.Sprintf("\t\"%s\"\n", importPath)) // Add dynamic import path
-
-	// Include existing imports from the original file
-	for _, imp := range existingImports {
-		buf.WriteString(fmt.Sprintf("\t\"%s\"\n", imp))
-	}
-	buf.WriteString(")\n\n")
-
-	// Versions struct
-	buf.WriteString(fmt.Sprintf("type %sVersions struct {\n", structName))
-	for _, v := range versionNumbers {
-		buf.WriteString(fmt.Sprintf("\tV%d %s.V%d[%sV%d]\n", v, lowerCaseStructName, v, structName, v))
-	}
-	buf.WriteString("}\n\n")
-
-	// struct
-	buf.WriteString(fmt.Sprintf("type %s struct {\n\t%s.PointerFields\n\t%sVersions\n}\n\n", structName, lowerCaseStructName, structName))
-
-	// Initialize function
-	buf.WriteString(fmt.Sprintf("func (d *%s) Initialize() {\n", structName))
-	buf.WriteString(fmt.Sprintf("\td.%sVersions = %sVersions{\n", structName, structName))
-
-	for _, v := range versionNumbers {
-		buf.WriteString(fmt.Sprintf("\t\tV%d: &%sV%d{},\n", v, structName, v))
-	}
-
-	buf.WriteString("\t}\n}\n\n")
-
-	// Additional methods for the struct
-	buf.WriteString(generateMethods(structName, lowerCaseStructName, versionNumbers))
-
-	// Version-specific struct types and methods
-	for _, v := range versionNumbers {
-		fields, ok := versions[v]
-		if !ok {
-			continue // Skip if version number is not found in the map
+func (v *Version) ExcludeVersionTag(tag string) string {
+	var result []string
+	tags := strings.Split(tag, " ")
+	for _, t := range tags {
+		if !strings.HasPrefix(t, "version:") {
+			result = append(result, t)
 		}
-
-		// Extract tags from original struct fields
-		tags := make(map[string]string)
-		for _, field := range structType.Fields.List {
-			if field.Tag != nil {
-				for _, name := range field.Names {
-					tag := reflect.StructTag(field.Tag.Value[1 : len(field.Tag.Value)-1]).Get("json")
-					if tag != "" {
-						tags[name.Name] = fmt.Sprintf("json:\"%s\"", tag)
-					}
-				}
-			}
-		}
-
-		buf.WriteString(fmt.Sprintf("type %sV%d struct {\n", structName, v))
-		buf.WriteString(formatStructFields(fields, tags))
-		buf.WriteString("}\n\n")
-		buf.WriteString(generateVersionMethods(structName, lowerCaseStructName, v))
 	}
-
-	return buf.String(), nil
+	return strings.Join(result, " ")
 }

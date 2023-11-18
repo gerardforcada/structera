@@ -5,15 +5,31 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
+type Module string
+
 const (
-	Version        = "0.1.0"
-	LibraryPackage = "github.com/gerardforcada/structera"
+	ModuleVersion Module = "0.1.0"
+	ModulePackage Module = "github.com/gerardforcada/structera"
 )
 
 func main() {
 	cli()
+}
+
+type StructName struct {
+	Original string
+	Lower    string
+}
+
+type Generator struct {
+	Version    *Version
+	Resolver   *Resolver
+	Filename   string
+	StructName StructName
+	OutputDir  string
 }
 
 func cli() {
@@ -44,15 +60,15 @@ func cli() {
 	flag.Parse()
 
 	if showVersion {
-		fmt.Printf("Structera version %s\n", Version)
+		fmt.Printf("Structera version %s\n", ModuleVersion)
 		os.Exit(0)
 	}
 
 	// Check if the required flags are set
 	if fileName == "" || structName == "" || showHelp {
-		fmt.Printf("Structera version %s\n\n", Version)
+		fmt.Printf("Structera version %s\n\n", ModuleVersion)
 		fmt.Println("Structera is a command-line tool for versioning Go structs.")
-		fmt.Printf("For more information, updates, or contributions, visit https://%s\n\n", LibraryPackage)
+		fmt.Printf("For more information, updates, or contributions, visit https://%s\n\n", ModulePackage)
 		fmt.Println("Usage:")
 		fmt.Println("  structera -f <path-to-struct-file> -s <StructName> [-o <output-directory>]")
 		fmt.Println("  structera --file <path-to-struct-file> --struct <StructName> [--output <output-directory>]")
@@ -78,7 +94,18 @@ func cli() {
 		outputDir = filepath.Dir(fileName)
 	}
 
-	if err := generateVersionedStructs(fileName, structName, outputDir); err != nil {
+	generator := Generator{
+		Version:  &Version{},
+		Resolver: &Resolver{},
+		Filename: fileName,
+		StructName: StructName{
+			Original: structName,
+			Lower:    strings.ToLower(structName),
+		},
+		OutputDir: outputDir,
+	}
+
+	if err := generator.GenerateVersionedStructs(); err != nil {
 		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)
 	}
