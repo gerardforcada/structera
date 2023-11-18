@@ -1,0 +1,77 @@
+package versioned
+
+import (
+    "{{.ModulePackage}}/version"
+    "{{.ImportPath}}"
+{{- range .ExistingImports}}
+    "{{.}}"
+{{- end}}
+)
+
+// Versions struct
+type {{.StructName.Original}}Versions struct {
+{{- range .VersionNumbers}}
+    V{{.}} {{$.StructName.Lower}}.V{{.}}[{{$.StructName.Original}}V{{.}}]
+{{- end}}
+}
+
+// Main struct
+type {{.StructName.Original}} struct {
+    {{.StructName.Lower}}.PointerFields
+    {{.StructName.Original}}Versions
+}
+
+// Initialize function
+func (d *{{.StructName.Original}}) Initialize() {
+    d.{{.StructName.Original}}Versions = {{.StructName.Original}}Versions{
+{{- range .VersionNumbers}}
+        V{{.}}: &{{$.StructName.Original}}V{{.}}{},
+{{- end}}
+    }
+}
+
+// Methods for the struct
+func (d {{.StructName.Original}}) GetVersionStructs() []version.Versioned[{{.StructName.Lower}}.Version] {
+    return []version.Versioned[{{.StructName.Lower}}.Version]{
+{{- range .VersionNumbers}}
+        {{$.StructName.Original}}V{{.}}{},
+{{- end}}
+    }
+}
+
+func (d {{.StructName.Original}}) GetBaseStruct() interface{} {
+    return d.PointerFields
+}
+
+func (d {{.StructName.Original}}) DetectVersion() {{.StructName.Lower}}.Version {
+    return version.DetectBestMatch[{{.StructName.Lower}}.Version, {{.StructName.Original}}](d)
+}
+
+func (d {{.StructName.Original}}) GetVersions() []{{.StructName.Lower}}.Version {
+    return []{{.StructName.Lower}}.Version{
+{{- range .VersionNumbers}}
+        {{$.StructName.Lower}}.Version{{.}},
+{{- end}}
+    }
+}
+
+func (d {{.StructName.Original}}) GetMinVersion() {{.StructName.Lower}}.Version {
+    return {{.StructName.Lower}}.Version1
+}
+
+func (d {{.StructName.Original}}) GetMaxVersion() {{.StructName.Lower}}.Version {
+    return {{.StructName.Lower}}.Version{{index .VersionNumbers (sub (len .VersionNumbers) 1)}}
+}
+
+// Version-specific struct types and methods
+{{- range $version, $fields := .VersionFields}}
+type {{$.StructName.Original}}V{{$version}} struct {
+{{- range $fields}}
+    {{.FormattedName}} {{.Type}}{{if .Tag}} `{{.Tag}}`{{end}}
+{{- end}}
+}
+
+func (d {{$.StructName.Original}}V{{$version}}) GetVersion() {{$.StructName.Lower}}.Version {
+    return {{$.StructName.Lower}}.Version{{$version}}
+}
+{{- end}}

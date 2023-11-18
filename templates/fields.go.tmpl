@@ -1,0 +1,7 @@
+package {{.PackageName}}
+
+type PointerFields struct {
+{{- range .Fields}}
+    {{.FormattedName}} {{.Type}}{{if .Tag}} `{{.Tag}}`{{end}}
+{{- end}}
+}

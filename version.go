@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go/ast"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -13,7 +14,8 @@ const (
 )
 
 type Version struct {
-	Versions map[int][]string
+	Versions       map[int][]string
+	SortedVersions []int
 }
 
 func (v *Version) IdentifyVersions(structType *ast.StructType) {
@@ -51,9 +53,24 @@ func (v *Version) IdentifyVersions(structType *ast.StructType) {
 	}
 
 	v.Versions = versionMap
+
+	for versionItem := range versionMap {
+		v.SortedVersions = append(v.SortedVersions, versionItem)
+	}
+	sort.Ints(v.SortedVersions)
 }
 
 func (v *Version) parseVersionTag(tag string, maxVersion int) []int {
+	if tag == "" {
+		// If no tag, include in all versions
+		var versions []int
+		for i := 1; i <= maxVersion; i++ {
+			versions = append(versions, i)
+		}
+		return versions
+	}
+
+	// Remaining logic stays the same
 	start, end, err := v.parseVersionRange(tag)
 	if err != nil || start > maxVersion {
 		return []int{}

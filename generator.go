@@ -2,16 +2,89 @@ package main
 
 import (
 	"fmt"
+	"github.com/gerardforcada/structera/helpers"
 	"go/ast"
 	"go/parser"
 	"go/token"
 	"os"
 	"path"
 	"path/filepath"
-	"reflect"
 	"sort"
 	"strings"
+	"text/template"
 )
+
+type VersionTemplateData struct {
+	PackageName   string
+	ModulePackage string
+	Versions      []int
+}
+
+type FieldInfo struct {
+	Name          string
+	FormattedName string
+	Type          string
+	Tag           string // This can be empty if there's no tag
+}
+
+func (fi FieldInfo) FormatField() string {
+	if fi.Tag != "" {
+		return fmt.Sprintf("%s %s `%s`", fi.FormattedName, fi.Type, fi.Tag)
+	}
+	return fmt.Sprintf("%s %s", fi.FormattedName, fi.Type)
+}
+
+type FieldsTemplateData struct {
+	PackageName string
+	Fields      []FieldInfo
+}
+
+type TemplateData any
+
+type GenerateFileFromTemplateInput struct {
+	TemplateFilePath string
+	OutputFilePath   string
+	Data             TemplateData
+}
+
+type VersionedStructTemplateData struct {
+	PackageName     string
+	ModulePackage   string
+	ImportPath      string
+	ExistingImports []string
+	StructName      StructName // Assuming StructName is a struct with appropriate fields
+	VersionNumbers  []int
+	VersionFields   map[int][]FieldInfo // Map of version number to slice of FieldInfo
+}
+
+func GenerateFileFromTemplate(input GenerateFileFromTemplateInput) error {
+	// Ensure the directory for the output file exists
+	outputDir := filepath.Dir(input.OutputFilePath)
+	if err := os.MkdirAll(outputDir, os.ModePerm); err != nil {
+		return err
+	}
+
+	// Parse the template file
+	tmpl, err := template.New(filepath.Base(input.TemplateFilePath)).Funcs(template.FuncMap{"sub": helpers.Sub}).ParseFiles(input.TemplateFilePath)
+	if err != nil {
+		return err
+	}
+
+	// Create the output file
+	file, err := os.Create(input.OutputFilePath)
+	if err != nil {
+		return err
+	}
+	defer func(file *os.File) {
+		err = file.Close()
+		if err != nil {
+			fmt.Printf("error closing file: %v\n", err)
+		}
+	}(file)
+
+	// Execute the template with the data
+	return tmpl.Execute(file, input.Data)
+}
 
 func (g Generator) GenerateVersionFile(versions []int) error {
 	versionDir := filepath.Join(g.OutputDir, "versioned", g.StructName.Lower)
@@ -19,24 +92,15 @@ func (g Generator) GenerateVersionFile(versions []int) error {
 		return err
 	}
 
-	var buf strings.Builder
-	buf.WriteString(fmt.Sprintf("package %s\n\n", g.StructName.Lower))
-	buf.WriteString(fmt.Sprintf("import \"%s/version\"\n\n", ModulePackage))
-	buf.WriteString("type Version version.Version\n\nconst (\n")
-
-	for _, v := range versions {
-		buf.WriteString(fmt.Sprintf("\tVersion%d Version = %d\n", v, v))
-	}
-
-	buf.WriteString(")\n\n")
-	buf.WriteString("type Versioned[T any] version.Versioned[T]\n\n")
-
-	for _, v := range versions {
-		buf.WriteString(fmt.Sprintf("type V%d[T Versioned[Version]] *T\n", v))
-	}
-
-	versionFileName := filepath.Join(versionDir, "version.go")
-	return os.WriteFile(versionFileName, []byte(buf.String()), 0644)
+	return GenerateFileFromTemplate(GenerateFileFromTemplateInput{
+		TemplateFilePath: "templates/version.go.tmpl",
+		OutputFilePath:   filepath.Join(versionDir, "version.go"),
+		Data: VersionTemplateData{
+			PackageName:   g.StructName.Lower,
+			ModulePackage: string(ModulePackage),
+			Versions:      versions,
+		},
+	})
 }
 
 func (g Generator) GenerateFieldsFile(structType *ast.StructType) error {
@@ -45,73 +109,25 @@ func (g Generator) GenerateFieldsFile(structType *ast.StructType) error {
 		return err
 	}
 
-	var buf strings.Builder
-	buf.WriteString(fmt.Sprintf("package %s\n\n", g.StructName.Lower))
-	buf.WriteString("type PointerFields struct {\n")
-
-	var fields []string
-	tags := make(map[string]string)
-	for _, field := range structType.Fields.List {
-		for _, name := range field.Names {
-			fieldName := name.Name
-			fieldType := formatFieldType(field.Type, true)
-			fields = append(fields, fmt.Sprintf("%s %s", fieldName, fieldType))
-			if field.Tag != nil {
-				tagValue := field.Tag.Value
-				tag := tagValue[1 : len(tagValue)-1] // Extract tag string without quotes
-				filteredTag := g.Version.ExcludeVersionTag(tag)
-				if filteredTag != "" {
-					tags[fieldName] = filteredTag
-				}
-			}
-		}
+	fields, maxNameLength, err := g.processFieldInfo(structType)
+	if err != nil {
+		return err
 	}
 
-	buf.WriteString(formatStructFields(fields, tags))
-	buf.WriteString("}\n")
-
-	fieldsFileName := filepath.Join(fieldsDir, "fields.go")
-	return os.WriteFile(fieldsFileName, []byte(buf.String()), 0644)
-}
-
-func (g Generator) GenerateMethods(versionNumbers []int) string {
-	var buf strings.Builder
-	buf.WriteString(fmt.Sprintf("func (d %s) GetVersionStructs() []version.Versioned[%s.Version] {\n", g.StructName.Original, g.StructName.Lower))
-	buf.WriteString(fmt.Sprintf("\treturn []version.Versioned[%s.Version]{\n", g.StructName.Lower))
-	for _, v := range versionNumbers {
-		buf.WriteString(fmt.Sprintf("\t\t%sV%d{},\n", g.StructName.Original, v))
+	// Second pass to add padding for alignment
+	for i := range fields {
+		padding := maxNameLength - len(fields[i].Name)
+		fields[i].FormattedName = fields[i].Name + strings.Repeat(" ", padding)
 	}
-	buf.WriteString("\t}\n}\n\n")
 
-	buf.WriteString(fmt.Sprintf("func (d %s) GetBaseStruct() interface{} {\n", g.StructName.Original))
-	buf.WriteString("\treturn d.PointerFields\n}\n\n")
-
-	buf.WriteString(fmt.Sprintf("func (d %s) DetectVersion() %s.Version {\n", g.StructName.Original, g.StructName.Lower))
-	buf.WriteString(fmt.Sprintf("\treturn version.DetectBestMatch[%s.Version, %s](d)\n}\n\n", g.StructName.Lower, g.StructName.Original))
-
-	buf.WriteString(fmt.Sprintf("func (d %s) GetVersions() []%s.Version {\n", g.StructName.Original, g.StructName.Lower))
-	buf.WriteString(fmt.Sprintf("\treturn []%s.Version{\n", g.StructName.Lower))
-	for _, v := range versionNumbers {
-		buf.WriteString(fmt.Sprintf("\t\t%s.Version%d,\n", g.StructName.Lower, v))
-	}
-	buf.WriteString("\t}\n}\n\n")
-
-	buf.WriteString(fmt.Sprintf("func (d %s) GetMinVersion() %s.Version {\n", g.StructName.Original, g.StructName.Lower))
-	buf.WriteString(fmt.Sprintf("\treturn %s.Version1\n}\n\n", g.StructName.Lower))
-
-	maxVersion := versionNumbers[len(versionNumbers)-1]
-	buf.WriteString(fmt.Sprintf("func (d %s) GetMaxVersion() %s.Version {\n", g.StructName.Original, g.StructName.Lower))
-	buf.WriteString(fmt.Sprintf("\treturn %s.Version%d\n}\n\n", g.StructName.Lower, maxVersion))
-
-	return buf.String()
-}
-
-func (g Generator) GenerateVersionMethods(version int) string {
-	var buf strings.Builder
-	buf.WriteString(fmt.Sprintf("func (d %sV%d) GetVersion() %s.Version {\n", g.StructName.Original, version, g.StructName.Lower))
-	buf.WriteString(fmt.Sprintf("\treturn %s.Version%d\n}\n\n", g.StructName.Lower, version))
-
-	return buf.String()
+	return GenerateFileFromTemplate(GenerateFileFromTemplateInput{
+		TemplateFilePath: "templates/fields.go.tmpl",
+		OutputFilePath:   filepath.Join(fieldsDir, "fields.go"),
+		Data: FieldsTemplateData{
+			PackageName: g.StructName.Lower,
+			Fields:      fields,
+		},
+	})
 }
 
 func (g Generator) GenerateVersionedStructs() error {
@@ -179,96 +195,115 @@ func (g Generator) GenerateVersionedStructs() error {
 				return err
 			}
 
-			versionedStructsCode, err := g.GenerateStructFile(structType, imports, importPath)
+			err = g.GenerateStructFile(structType, imports, importPath)
 			if err != nil {
 				return err
 			}
 
-			// Create a versioned folder
-			versionedDir := filepath.Join(g.OutputDir, "versioned")
-			if _, err := os.Stat(versionedDir); os.IsNotExist(err) {
-				err := os.MkdirAll(versionedDir, os.ModePerm)
-				if err != nil {
-					return err
-				}
-			}
-
-			outputFileName := filepath.Join(versionedDir, strings.ToLower(g.StructName.Original)+".go")
-			return os.WriteFile(outputFileName, []byte(versionedStructsCode), 0644)
+			return nil
 		}
 	}
 
 	return fmt.Errorf("struct '%s' not found in file '%s'", g.StructName.Original, g.Filename)
 }
 
-func (g Generator) GenerateStructFile(structType *ast.StructType, existingImports []string, importPath string) (string, error) {
-	// Sort the version numbers
-	var versionNumbers []int
-	for v := range g.Version.Versions {
-		versionNumbers = append(versionNumbers, v)
-	}
-	sort.Ints(versionNumbers)
-
-	var buf strings.Builder
-	buf.WriteString("package versioned\n\n")
-	buf.WriteString("import (\n")
-	buf.WriteString(fmt.Sprintf("\t\"%s/version\"\n", ModulePackage))
-	buf.WriteString(fmt.Sprintf("\t\"%s\"\n", importPath)) // Add dynamic import path
-
-	// Include existing imports from the original file
-	for _, imp := range existingImports {
-		buf.WriteString(fmt.Sprintf("\t\"%s\"\n", imp))
-	}
-	buf.WriteString(")\n\n")
-
-	// Versions struct
-	buf.WriteString(fmt.Sprintf("type %sVersions struct {\n", g.StructName.Original))
-	for _, v := range versionNumbers {
-		buf.WriteString(fmt.Sprintf("\tV%d %s.V%d[%sV%d]\n", v, g.StructName.Lower, v, g.StructName.Original, v))
-	}
-	buf.WriteString("}\n\n")
-
-	// struct
-	buf.WriteString(fmt.Sprintf("type %s struct {\n\t%s.PointerFields\n\t%sVersions\n}\n\n", g.StructName.Original, g.StructName.Lower, g.StructName.Original))
-
-	// Initialize function
-	buf.WriteString(fmt.Sprintf("func (d *%s) Initialize() {\n", g.StructName.Original))
-	buf.WriteString(fmt.Sprintf("\td.%sVersions = %sVersions{\n", g.StructName.Original, g.StructName.Original))
-
-	for _, v := range versionNumbers {
-		buf.WriteString(fmt.Sprintf("\t\tV%d: &%sV%d{},\n", v, g.StructName.Original, v))
+func (g Generator) GenerateStructFile(structType *ast.StructType, existingImports []string, importPath string) error {
+	versionedDir := filepath.Join(g.OutputDir, "versioned")
+	if err := os.MkdirAll(versionedDir, os.ModePerm); err != nil {
+		return err
 	}
 
-	buf.WriteString("\t}\n}\n\n")
+	versionFields, maxNameLength, err := g.prepareVersionFields(structType)
+	if err != nil {
+		return err
+	}
 
-	// Additional methods for the struct
-	buf.WriteString(g.GenerateMethods(versionNumbers))
-
-	// Version-specific struct types and methods
-	for _, v := range versionNumbers {
-		fields, ok := g.Version.Versions[v]
-		if !ok {
-			continue // Skip if version number is not found in the map
+	// Apply padding for alignment to version-specific fields
+	for _, fields := range versionFields {
+		for i := range fields {
+			padding := maxNameLength - len(fields[i].Name)
+			fields[i].FormattedName = fields[i].Name + strings.Repeat(" ", padding)
 		}
+	}
 
-		// Extract tags from original struct fields
-		tags := make(map[string]string)
-		for _, field := range structType.Fields.List {
-			if field.Tag != nil {
-				for _, name := range field.Names {
-					tag := reflect.StructTag(field.Tag.Value[1 : len(field.Tag.Value)-1]).Get("json")
-					if tag != "" {
-						tags[name.Name] = fmt.Sprintf("json:\"%s\"", tag)
-					}
+	return GenerateFileFromTemplate(GenerateFileFromTemplateInput{
+		TemplateFilePath: "templates/struct.go.tmpl",
+		OutputFilePath:   filepath.Join(versionedDir, fmt.Sprintf("%s.go", g.StructName.Lower)),
+		Data: VersionedStructTemplateData{
+			PackageName:     "versioned",
+			ModulePackage:   string(ModulePackage),
+			ImportPath:      importPath,
+			ExistingImports: existingImports,
+			StructName:      g.StructName,
+			VersionNumbers:  g.Version.SortedVersions,
+			VersionFields:   versionFields,
+		},
+	})
+}
+
+func (g Generator) prepareVersionFields(structType *ast.StructType) (map[int][]FieldInfo, int, error) {
+	fields, maxNameLength, err := g.processFieldInfo(structType)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	versionFields := make(map[int][]FieldInfo)
+	for version, versionedFieldStrs := range g.Version.Versions {
+		var versionFieldInfos []FieldInfo
+
+		for _, versionedFieldStr := range versionedFieldStrs {
+			parts := strings.SplitN(versionedFieldStr, " ", 2)
+			if len(parts) < 2 {
+				continue
+			}
+			fieldName := parts[0]
+
+			for _, field := range fields {
+				if field.Name == fieldName {
+					versionFieldInfos = append(versionFieldInfos, field)
+					break
 				}
 			}
 		}
 
-		buf.WriteString(fmt.Sprintf("type %sV%d struct {\n", g.StructName.Original, v))
-		buf.WriteString(formatStructFields(fields, tags))
-		buf.WriteString("}\n\n")
-		buf.WriteString(g.GenerateVersionMethods(v))
+		versionFields[version] = versionFieldInfos
 	}
 
-	return buf.String(), nil
+	return versionFields, maxNameLength, nil
+}
+
+func (g Generator) processFieldInfo(structType *ast.StructType) ([]FieldInfo, int, error) {
+	var fields []FieldInfo
+	maxNameLength := 0
+
+	for _, field := range structType.Fields.List {
+		if len(field.Names) == 0 {
+			continue
+		}
+
+		fieldName := field.Names[0].Name
+		fieldType := formatFieldType(field.Type, true) // Assuming this function formats the type as string
+
+		fieldInfo := FieldInfo{
+			Name: fieldName,
+			Type: fieldType,
+		}
+
+		if field.Tag != nil {
+			tagValue := field.Tag.Value
+			tag := tagValue[1 : len(tagValue)-1] // Extract tag string without quotes
+			filteredTag := g.Version.ExcludeVersionTag(tag)
+			if filteredTag != "" {
+				fieldInfo.Tag = filteredTag
+			}
+		}
+
+		fields = append(fields, fieldInfo)
+
+		if len(fieldName) > maxNameLength {
+			maxNameLength = len(fieldName)
+		}
+	}
+
+	return fields, maxNameLength, nil
 }

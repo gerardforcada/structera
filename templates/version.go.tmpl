@@ -1,0 +1,16 @@
+package {{.PackageName}}
+
+import "{{.ModulePackage}}/version"
+
+type Version version.Version
+
+const (
+{{- range .Versions}}
+	Version{{.}} Version = {{.}}
+{{- end}}
+)
+
+type Versioned[T any] version.Versioned[T]
+{{ range .Versions}}
+type V{{.}}[T Versioned[Version]] *T
+{{- end}}

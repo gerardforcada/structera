@@ -6,3 +6,7 @@ func Max(a, b int) int {
 	}
 	return b
 }
+
+func Sub(a, b int) int {
+	return a - b
+}
