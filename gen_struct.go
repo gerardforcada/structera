@@ -23,7 +23,7 @@ func (g *Generator) StructFile(existingImports []string, importPath string) erro
 	}
 
 	return g.FileFromTemplate(GenerateFileFromTemplateInput{
-		TemplateFilePath: "templates/struct.go.tmpl",
+		TemplateFilePath: "struct.go.tmpl",
 		OutputFilePath:   filepath.Join(versionedDir, fmt.Sprintf("%s.go", g.StructName.Lower)),
 		Data: VersionedStructTemplateData{
 			PackageName:     "versioned",

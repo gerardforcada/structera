@@ -18,7 +18,7 @@ func (g *Generator) VersionFile(versions []int) error {
 	}
 
 	return g.FileFromTemplate(GenerateFileFromTemplateInput{
-		TemplateFilePath: "templates/version.go.tmpl",
+		TemplateFilePath: "version.go.tmpl",
 		OutputFilePath:   filepath.Join(versionDir, "version.go"),
 		Data: VersionTemplateData{
 			PackageName:   g.StructName.Lower,

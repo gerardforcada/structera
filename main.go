@@ -11,7 +11,7 @@ import (
 type Module string
 
 const (
-	ModuleVersion Module = "0.2.1-alpha"
+	ModuleVersion Module = "0.2.2-alpha"
 	ModulePackage Module = "github.com/gerardforcada/structera"
 )
 

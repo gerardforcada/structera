@@ -24,7 +24,7 @@ func (g *Generator) FieldsFile() error {
 	}
 
 	return g.FileFromTemplate(GenerateFileFromTemplateInput{
-		TemplateFilePath: "templates/fields.go.tmpl",
+		TemplateFilePath: "fields.go.tmpl",
 		OutputFilePath:   filepath.Join(fieldsDir, "fields.go"),
 		Data: FieldsTemplateData{
 			PackageName: g.StructName.Lower,
