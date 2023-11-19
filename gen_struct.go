@@ -13,7 +13,7 @@ type VersionedStructTemplateData struct {
 	ExistingImports []string
 	StructName      StructName
 	VersionNumbers  []int
-	VersionFields   map[int][]FieldInfo
+	VersionedFields map[int][]FieldInfo
 }
 
 func (g *Generator) StructFile(existingImports []string, importPath string) error {
@@ -32,7 +32,7 @@ func (g *Generator) StructFile(existingImports []string, importPath string) erro
 			ExistingImports: existingImports,
 			StructName:      g.StructName,
 			VersionNumbers:  g.Version.SortedVersions,
-			VersionFields:   g.VersionedFields,
+			VersionedFields: g.VersionedFields,
 		},
 	})
 }

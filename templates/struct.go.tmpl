@@ -64,7 +64,7 @@ func (d {{.StructName.Original}}) GetMaxVersion() {{.StructName.Lower}}.Version 
 }
 
 // Version-specific struct types and methods
-{{- range $version, $fields := .VersionFields}}
+{{- range $version, $fields := .VersionedFields}}
 type {{$.StructName.Original}}V{{$version}} struct {
 {{- range $fields}}
     {{.FormattedName}} {{.Type}}{{if .Tag}} `{{.Tag}}`{{end}}

@@ -130,7 +130,7 @@ func (g *Generator) VersionedStructs() error {
 			}
 
 			g.ProcessedFields = fields
-			g.PrepareVersionFields()
+			g.PrepareVersionedFields()
 
 			// Generate fields.go
 			if err := g.FieldsFile(); err != nil {
@@ -159,8 +159,8 @@ func (g *Generator) VersionedStructs() error {
 	return fmt.Errorf("struct '%s' not found in file '%s'", g.StructName.Original, g.Filename)
 }
 
-func (g *Generator) PrepareVersionFields() {
-	versionFields := make(map[int][]FieldInfo)
+func (g *Generator) PrepareVersionedFields() {
+	versionedFields := make(map[int][]FieldInfo)
 	for version, versionedFieldStrs := range g.Version.Versions {
 		var versionFieldInfos []FieldInfo
 
@@ -173,16 +173,17 @@ func (g *Generator) PrepareVersionFields() {
 
 			for _, field := range g.ProcessedFields {
 				if field.Name == fieldName {
+					field.Type = field.Type[1:] // remove first char of field type (asterisk)
 					versionFieldInfos = append(versionFieldInfos, field)
 					break
 				}
 			}
 		}
 
-		versionFields[version] = versionFieldInfos
+		versionedFields[version] = versionFieldInfos
 	}
 
-	g.VersionedFields = versionFields
+	g.VersionedFields = versionedFields
 }
 
 func (g *Generator) ProcessFieldInfo(structType *ast.StructType) ([]FieldInfo, int, error) {
