@@ -1,6 +1,7 @@
-package main
+package example
 
-type Demo struct {
+// User Original struct with version tags
+type User struct {
 	InEveryVersion string  `json:"in_every_version"`
 	OnlyIn1        int     `version:"1" json:"only_in_1"`
 	From2ToEnd     uint8   `version:"2+" json:"from_2_to_end"`

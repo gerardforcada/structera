@@ -79,10 +79,10 @@ func cli() {
 		fmt.Println("  --help,    -h  Prints this page and exit")
 		fmt.Println("  --version, -v  Print the version of Structera and exit")
 		fmt.Println("\nExample:")
-		fmt.Println("  structera -f ./models/demo.go -s Demo")
-		fmt.Println("  structera -f ./models/demo.go -s Demo -o ./models/versioned")
-		fmt.Println("  structera --file ./models/demo.go --struct Demo")
-		fmt.Println("  structera --file ./models/demo.go --struct Demo --output ./models/versioned\n")
+		fmt.Println("  structera -f ./models/user.go -s User")
+		fmt.Println("  structera -f ./models/user.go -s User -o ./models/versioned")
+		fmt.Println("  structera --file ./models/user.go --struct User")
+		fmt.Println("  structera --file ./models/user.go --struct User --output ./models/versioned\n")
 
 		if showHelp {
 			os.Exit(0)

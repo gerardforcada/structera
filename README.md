@@ -23,20 +23,20 @@ Structera is used through the command line with these arguments:
 For example:
 
 ```bash
-structera -f ./models/demo.go -s Demo -o ./models/
+structera -f ./models/user.go -s User -o ./models/
 ```
 
-This generates a versioned folder with structs based on the `Demo` struct in `demo.go`, placing them in the `./models/versioned` directory.
+This generates a versioned folder with structs based on the `User` struct in `user.go`, placing them in the `./models/versioned` directory.
 
 ```bash
 $ tree models/
 models/
-├── demo.go
+├── user.go
 └── versioned
-    ├── demo
+    ├── user
     │   ├── fields.go
     │   └── version.go
-    └── demo.go
+    └── user.go
 
 2 directories, 4 files
 ```
@@ -48,7 +48,7 @@ For more details about the command-line options, run `structera --help`.
 Structera processes a specified Go struct and creates different struct versions based on version tags in struct fields. Consider this struct:
 
 ```go
-type Demo struct {
+type User struct {
     InEveryVersion string
     OnlyIn1        string `version:"1"`
     From2ToEnd     string `version:"2+"`
@@ -61,34 +61,34 @@ type Demo struct {
 Structera produces version-specific structs for each tag, enabling easy management of multiple versions.
 
 ```go
-type DemoV1 struct {
+type UserV1 struct {
     InEveryVersion string
     OnlyIn1        string
     FromStartTo3   string
     From1to4       string
 }
 
-type DemoV2 struct {
+type UserV2 struct {
     InEveryVersion string
     From2ToEnd     string
     FromStartTo3   string
     From1to4       string
 }
 
-type DemoV3 struct {
+type UserV3 struct {
     InEveryVersion string
     From2ToEnd     string
     FromStartTo3   string
     From1to4       string
 }
 
-type DemoV4 struct {
+type UserV4 struct {
     InEveryVersion string
     From2ToEnd     string
     From1to4       string
 }
 
-type DemoV5 struct {
+type UserV5 struct {
     InEveryVersion string
     From2ToEnd     string
     OnlyIn5        string
@@ -121,19 +121,19 @@ import (
 
 func main() {
 	// Create a new struct
-	demo := &models.DemoV1{
+	user := &models.UserV1{
 		InEveryVersion: "hey",
 	}
-	fmt.Println(demo.InEveryVersion) // Prints "hey"
+	fmt.Println(user.InEveryVersion) // Prints "hey"
 
 	// ----------------------------------------------- //
 
 	// Or unmarshal directly into the struct
 	jsonString := `{"in_every_version":"hey"}`
 	
-	var demo models.DemoV1
-	_ = json.Unmarshal([]byte(jsonString), &demo)
-	fmt.Println(demo.InEveryVersion) // Prints "hey"
+	var user models.UserV1
+	_ = json.Unmarshal([]byte(jsonString), &user)
+	fmt.Println(user.InEveryVersion) // Prints "hey"
 }
 ```
 
@@ -151,25 +151,25 @@ import (
 
 func main() {
 	// Create a new struct
-	var demo models.Demo
-	demo.V1 = &models.DemoV1{
+	var user models.User
+	user.V1 = &models.UserV1{
 		InEveryVersion: "hey",
 	}
-	fmt.Println(demo.V1.InEveryVersion) // Prints "hey"
+	fmt.Println(user.V1.InEveryVersion) // Prints "hey"
 
 	// ----------------------------------------------- //
 
 	// Or unmarshal directly into the struct
 	jsonString := `{"in_every_version":"hey"}`
 
-	var demo models.Demo
-	demo.Initialize() // Initializes all the versions
+	var user models.User
+	user.Initialize() // Initializes all the versions
 
-	err := json.Unmarshal([]byte(jsonString), demo.V1)
+	err := json.Unmarshal([]byte(jsonString), user.V1)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(demo.V1.InEveryVersion) // Prints "hey"
+	fmt.Println(user.V1.InEveryVersion) // Prints "hey"
 }
 ```
 
@@ -188,14 +188,14 @@ import (
 func main() {
 	jsonString := `{"in_every_version":"hey"}`
 
-	var demo models.Demo
-	err := json.Unmarshal([]byte(jsonString), &demo)
+	var user models.User
+	err := json.Unmarshal([]byte(jsonString), &user)
 	if err != nil {
 		panic(err)
 	}
 
-	version := demo.DetectVersion()
-	fmt.Println(version) // Prints "1" (demo.Version1)
+	version := user.DetectVersion()
+	fmt.Println(version) // Prints "1" (user.Version1)
 }
 ```
 
@@ -204,7 +204,7 @@ func main() {
 Structera can retain additional tags in generated structs, useful for preserving extra information like JSON tags.
 
 ```go
-type Demo struct {
+type User struct {
     InEveryVersion string `json:"in_every_version"`
     OnlyIn1        string `version:"1" json:"only_in_1"`
     From2ToEnd     string `version:"2+" json:"from_2_to_end"`
@@ -217,7 +217,7 @@ type Demo struct {
 Resulting struct with retained tags:
 
 ```go
-type DemoV1 struct {
+type UserV1 struct {
     InEveryVersion string `json:"in_every_version"`
     OnlyIn1        string `json:"only_in_1"`
     FromStartTo3   string `json:"from_start_to_3"`
