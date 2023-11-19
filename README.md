@@ -3,7 +3,8 @@
 Structera is a command-line tool developed in Go. It facilitates the automatic generation of versioned Go structs based on custom version tags, simplifying the management of different struct versions.
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/gerardforcada/structera.svg)](https://pkg.go.dev/github.com/gerardforcada/structera)
-![Go Tests](https://github.com/gerardforcada/structera/actions/workflows/test.yml/badge.svg)
+[![Go Tests](https://github.com/gerardforcada/structera/actions/workflows/test.yml/badge.svg)](https://github.com/gerardforcada/structera/actions/workflows/test.yml)
+[![Coverage Status](https://coveralls.io/repos/github/gerardforcada/structera/badge.svg?branch=main)](https://coveralls.io/github/gerardforcada/structera?branch=main)
 
 ## Installation
 
