@@ -28,14 +28,14 @@ func (v *Version) IdentifyVersions(structType *ast.StructType) {
 		}
 	}
 
-	maxVersion := v.determineMaxVersion(allTags)
+	maxVersion := v.DetermineMaxVersion(allTags)
 
 	versionMap := make(map[int][]string)
 	for _, field := range structType.Fields.List {
 		var versions []int
 		if field.Tag != nil {
 			tag := reflect.StructTag(field.Tag.Value[1 : len(field.Tag.Value)-1]).Get(VersionTag)
-			versions = v.parseVersionTag(tag, maxVersion)
+			versions = v.ParseVersionTag(tag, maxVersion)
 		} else {
 			for v := 1; v <= maxVersion; v++ {
 				versions = append(versions, v)
@@ -60,7 +60,7 @@ func (v *Version) IdentifyVersions(structType *ast.StructType) {
 	sort.Ints(v.SortedVersions)
 }
 
-func (v *Version) parseVersionTag(tag string, maxVersion int) []int {
+func (v *Version) ParseVersionTag(tag string, maxVersion int) []int {
 	if tag == "" {
 		// If no tag, include in all versions
 		var versions []int
@@ -71,7 +71,7 @@ func (v *Version) parseVersionTag(tag string, maxVersion int) []int {
 	}
 
 	// Remaining logic stays the same
-	start, end, err := v.parseVersionRange(tag)
+	start, end, err := v.ParseVersionRange(tag)
 	if err != nil || start > maxVersion {
 		return []int{}
 	}
@@ -88,11 +88,11 @@ func (v *Version) parseVersionTag(tag string, maxVersion int) []int {
 	return versions
 }
 
-func (v *Version) determineMaxVersion(versionTags []string) int {
+func (v *Version) DetermineMaxVersion(versionTags []string) int {
 	maxVersion := 1
 
 	for _, tag := range versionTags {
-		_, end, err := v.parseVersionRange(tag)
+		_, end, err := v.ParseVersionRange(tag)
 		if err == nil && end > maxVersion {
 			maxVersion = end
 		}
@@ -101,7 +101,7 @@ func (v *Version) determineMaxVersion(versionTags []string) int {
 	return maxVersion
 }
 
-func (v *Version) parseVersionRange(tag string) (int, int, error) {
+func (v *Version) ParseVersionRange(tag string) (int, int, error) {
 	if tag == "" {
 		return 1, 1, nil // Default to version 1 if no tag
 	}

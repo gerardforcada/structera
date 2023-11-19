@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"go/ast"
-	"strings"
 )
 
 func formatFieldType(expr ast.Expr, pointer bool) string {
@@ -40,28 +39,4 @@ func formatFieldType(expr ast.Expr, pointer bool) string {
 	}
 
 	return result
-}
-
-func formatStructFields(fields []string, tags map[string]string) string {
-	maxLen := 0
-	for _, f := range fields {
-		parts := strings.Split(f, " ")
-		if len(parts[0]) > maxLen {
-			maxLen = len(parts[0])
-		}
-	}
-
-	var buf strings.Builder
-	for _, f := range fields {
-		parts := strings.Split(f, " ")
-		fieldName := parts[0]
-		fieldType := parts[1]
-		buf.WriteString(fmt.Sprintf("\t%s%s %s", fieldName, strings.Repeat(" ", maxLen-len(fieldName)), fieldType))
-		if tag, ok := tags[fieldName]; ok {
-			buf.WriteString(fmt.Sprintf(" `%s`", tag))
-		}
-		buf.WriteString("\n")
-	}
-
-	return buf.String()
 }

@@ -19,19 +19,6 @@ func main() {
 	cli()
 }
 
-type StructName struct {
-	Original string
-	Lower    string
-}
-
-type Generator struct {
-	Version    *Version
-	Resolver   *Resolver
-	Filename   string
-	StructName StructName
-	OutputDir  string
-}
-
 func cli() {
 	var (
 		fileName    string
@@ -105,7 +92,7 @@ func cli() {
 		OutputDir: outputDir,
 	}
 
-	if err := generator.GenerateVersionedStructs(); err != nil {
+	if err := generator.VersionedStructs(); err != nil {
 		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)
 	}
