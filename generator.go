@@ -81,15 +81,19 @@ func (g *Generator) VersionedStructs() error {
 		return fmt.Errorf("error finding go.mod: %v", err)
 	}
 
-	err = g.Resolver.GetBaseImportPath(g.Resolver.GoModPath)
+	err = g.Resolver.GetBaseImportPath()
 	if err != nil {
 		return fmt.Errorf("error getting base import path: %v", err)
 	}
 
-	relativePath, err := filepath.Rel(g.OutputDir, filepath.Dir(g.Filename))
+	// Calculate the relative path from the go.mod directory to the generated file directory
+	goModDir := filepath.Dir(g.Resolver.GoModPath)
+	relativePath, err := filepath.Rel(goModDir, g.OutputDir)
 	if err != nil {
 		return err
 	}
+
+	// Append the 'versioned' and struct name to the import path
 	importPath := path.Join(g.Resolver.ImportPath, relativePath, "versioned", g.StructName.Lower)
 
 	for _, f := range node.Decls {

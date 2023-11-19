@@ -14,8 +14,26 @@ type Resolver struct {
 	GoModPath  string
 }
 
-func (r *Resolver) GetBaseImportPath(goModFilePath string) error {
-	data, err := os.ReadFile(goModFilePath)
+func (r *Resolver) FindGoModPath(startDir string) error {
+	currentDir := startDir
+	for {
+		// Check if go.mod exists in the current directory
+		if _, err := os.Stat(filepath.Join(currentDir, "go.mod")); err == nil {
+			r.GoModPath = filepath.Join(currentDir, "go.mod")
+			return nil
+		}
+
+		// Move up to the parent directory
+		parentDir := filepath.Dir(currentDir)
+		if parentDir == currentDir {
+			return fmt.Errorf("go.mod not found")
+		}
+		currentDir = parentDir
+	}
+}
+
+func (r *Resolver) GetBaseImportPath() error {
+	data, err := os.ReadFile(r.GoModPath)
 	if err != nil {
 		return err
 	}
@@ -31,29 +49,4 @@ func (r *Resolver) GetBaseImportPath(goModFilePath string) error {
 	}
 
 	return fmt.Errorf("module declaration not found in go.mod")
-}
-
-func (r *Resolver) FindGoModPath(startDir string) error {
-	currentDir := startDir
-	for {
-		files, err := os.ReadDir(currentDir)
-		if err != nil {
-			return err
-		}
-
-		for _, f := range files {
-			if f.Name() == "go.mod" {
-				r.GoModPath = filepath.Join(currentDir, f.Name())
-				return nil
-			}
-		}
-
-		parentDir := filepath.Dir(currentDir)
-		if parentDir == currentDir {
-			break
-		}
-		currentDir = parentDir
-	}
-
-	return fmt.Errorf("go.mod not found")
 }
