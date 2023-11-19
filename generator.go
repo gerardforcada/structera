@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/gerardforcada/structera/helpers"
+	"github.com/gerardforcada/structera/templates"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -42,8 +43,7 @@ func (g *Generator) FileFromTemplate(input GenerateFileFromTemplateInput) error 
 		return err
 	}
 
-	// Parse the template file
-	tmpl, err := template.New(filepath.Base(input.TemplateFilePath)).Funcs(template.FuncMap{"sub": helpers.Sub}).ParseFiles(input.TemplateFilePath)
+	tmpl, err := template.New(filepath.Base(input.TemplateFilePath)).Funcs(template.FuncMap{"sub": helpers.Sub}).ParseFS(templates.FS, input.TemplateFilePath)
 	if err != nil {
 		return err
 	}
