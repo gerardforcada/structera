@@ -101,7 +101,6 @@ func TestVersion_DetermineMaxVersion(t *testing.T) {
 		{"Single version", []string{"1"}, 1},
 		{"Range", []string{"1-3"}, 3},
 		{"Multiple tags", []string{"1", "2", "3-4"}, 4},
-		// Add more test cases as needed
 	}
 
 	for _, tt := range tests {
@@ -156,7 +155,6 @@ func TestVersion_ParseVersionRange(t *testing.T) {
 			wantEnd:   1,
 			wantErr:   false,
 		},
-		// Add more test cases as needed
 	}
 
 	for _, tt := range tests {
@@ -185,7 +183,6 @@ func TestVersion_ExcludeVersionTag(t *testing.T) {
 	}{
 		{"Single version tag", `version:"1" json:"field1"`, `json:"field1"`},
 		{"Multiple tags", `json:"field1" version:"1-2" xml:"field1"`, `json:"field1" xml:"field1"`},
-		// Add more test cases as needed
 	}
 
 	for _, tt := range tests {
@@ -196,5 +193,3 @@ func TestVersion_ExcludeVersionTag(t *testing.T) {
 		})
 	}
 }
-
-// Add the implementation of TestVersion_ParseVersionTag and TestVersion_ParseVersionRange here

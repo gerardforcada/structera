@@ -77,7 +77,7 @@ func TestGenerator_FieldsFile(t *testing.T) {
 			wantMatch: true,
 		},
 		{
-			name: "This config generates the example/versioned/testing/fields.go file",
+			name: "This config does not generate the example/versioned/testing/fields.go file",
 			fields: fields{
 				StructName: StructName{
 					Lower: "testing",
