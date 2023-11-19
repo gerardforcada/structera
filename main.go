@@ -69,7 +69,8 @@ func cli() {
 		fmt.Println("  structera -f ./models/user.go -s User")
 		fmt.Println("  structera -f ./models/user.go -s User -o ./models/versioned")
 		fmt.Println("  structera --file ./models/user.go --struct User")
-		fmt.Println("  structera --file ./models/user.go --struct User --output ./models/versioned\n")
+		fmt.Println("  structera --file ./models/user.go --struct User --output ./models/versioned")
+		fmt.Println()
 
 		if showHelp {
 			os.Exit(0)
