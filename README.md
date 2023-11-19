@@ -231,4 +231,4 @@ Contributions to Structera are welcome! Please feel free to submit pull requests
 
 ## License
 
-Structera is licensed under the MIT License.
+Structera is licensed under the GNU GPLv3 License.
