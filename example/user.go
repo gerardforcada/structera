@@ -16,18 +16,4 @@ type User struct {
 	AndDoublePointers **int
 	AndGenerics       any
 	AndOldGenerics    interface{}
-	// The following is not supported yet:
-	//
-	// Nested  struct {
-	//	AndNestedAgain struct {
-	//		AndNestedAgainAndAgain struct {
-	//			Hi string
-	//		}
-	//	}
-	// }
-	// OtherStructs OtherStruct
-}
-
-type OtherStruct struct {
-	Hi string
 }

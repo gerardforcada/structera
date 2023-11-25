@@ -21,8 +21,10 @@ func TestGenerator_StructFile(t *testing.T) {
 	type fields struct {
 		StructName      StructName
 		OutputDir       string
-		Version         *Version
+		Format          *Format
 		VersionedFields map[int][]FieldInfo
+		Package         string
+		ProcessedFields []FieldInfo
 	}
 	tests := []struct {
 		name            string
@@ -38,9 +40,10 @@ func TestGenerator_StructFile(t *testing.T) {
 				StructName: StructName{
 					Original: "Testing",
 					Lower:    "testing",
+					Snake:    "testing",
 				},
 				OutputDir: tempDir,
-				Version: &Version{
+				Format: &Format{
 					Versions: map[int][]string{
 						1: {"InEveryVersion", "OnlyIn1", "FromStartTo3", "From1to4"},
 						2: {"InEveryVersion", "From2ToEnd", "FromStartTo3", "From1to4"},
@@ -149,9 +152,17 @@ func TestGenerator_StructFile(t *testing.T) {
 						},
 					},
 				},
+				Package: string(ModuleFolder),
+				ProcessedFields: []FieldInfo{
+					{FormattedName: "InEveryVersion", Type: "*string", Tag: "json:\"in_every_version\""},
+					{FormattedName: "OnlyIn1", Type: "       *int", Tag: "json:\"only_in_1\""},
+					{FormattedName: "From2ToEnd", Type: "    *uint8", Tag: "json:\"from_2_to_end\""},
+					{FormattedName: "FromStartTo3", Type: "  *[]byte", Tag: "json:\"from_start_to_3\""},
+					{FormattedName: "From1to4", Type: "      *float32", Tag: "json:\"from_1_to_4\""},
+				},
 			},
 			existingImports: []string{},
-			importPath:      "github.com/gerardforcada/structera/example/versioned/testing",
+			importPath:      "github.com/gerardforcada/structera/example/eras/testing",
 			wantErr:         false,
 			wantMatch:       true,
 		},
@@ -161,9 +172,10 @@ func TestGenerator_StructFile(t *testing.T) {
 				StructName: StructName{
 					Original: "Testing",
 					Lower:    "testing",
+					Snake:    "testing",
 				},
 				OutputDir: tempDir,
-				Version: &Version{
+				Format: &Format{
 					Versions: map[int][]string{
 						1: {"InEveryVersion", "OnlyIn1", "FromStartTo3", "From1to4"},
 						2: {"InEveryVersion", "From2ToEnd", "FromStartTo3", "From1to4"},
@@ -226,9 +238,17 @@ func TestGenerator_StructFile(t *testing.T) {
 						},
 					},
 				},
+				Package: string(ModuleFolder),
+				ProcessedFields: []FieldInfo{
+					{FormattedName: "InEveryVersion", Type: "*string"},
+					{FormattedName: "OnlyIn1", Type: "*int"},
+					{FormattedName: "FromStartTo3", Type: "[]byte"},
+					{FormattedName: "From1to4", Type: "*float32"},
+					{FormattedName: "From2ToEnd", Type: "*uint8"},
+				},
 			},
 			existingImports: []string{"test"},
-			importPath:      "github.com/gerardforcada/structera/example/versioned/testing",
+			importPath:      "github.com/gerardforcada/structera/example/eras/testing",
 			wantErr:         false,
 			wantMatch:       false,
 		},
@@ -239,22 +259,25 @@ func TestGenerator_StructFile(t *testing.T) {
 			g := &Generator{
 				StructName:      tt.fields.StructName,
 				OutputDir:       tt.fields.OutputDir,
-				Version:         tt.fields.Version,
+				Format:          tt.fields.Format,
 				VersionedFields: tt.fields.VersionedFields,
+				Package:         tt.fields.Package,
+				ProcessedFields: tt.fields.ProcessedFields,
 			}
+
 			if err := g.StructFile(tt.existingImports, tt.importPath); (err != nil) != tt.wantErr {
 				t.Errorf("StructFile() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			// Path to the generated file
-			generatedFilePath := filepath.Join(tempDir, "versioned", fmt.Sprintf("%s.go", tt.fields.StructName.Lower))
+			generatedFilePath := filepath.Join(tempDir, tt.fields.Package, fmt.Sprintf("%s.go", tt.fields.StructName.Lower))
 
 			// Read the contents of the generated file
 			generatedFileContent, err := os.ReadFile(generatedFilePath)
 			assert.NoError(t, err)
 
 			// Path to the reference file
-			referenceFilePath := filepath.Join("example", "versioned", fmt.Sprintf("%s.go", tt.fields.StructName.Lower))
+			referenceFilePath := filepath.Join("example", tt.fields.Package, fmt.Sprintf("%s.go", tt.fields.StructName.Lower))
 
 			// Read the contents of the reference file
 			referenceFileContent, err := os.ReadFile(referenceFilePath)
