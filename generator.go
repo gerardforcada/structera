@@ -10,7 +10,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"sort"
 	"strings"
 	"text/template"
 )
@@ -18,16 +17,18 @@ import (
 type StructName struct {
 	Original string
 	Lower    string
+	Snake    string
 }
 
 type Generator struct {
-	Version         *Version
+	Format          *Format
 	Resolver        *Resolver
 	Filename        string
 	StructName      StructName
 	OutputDir       string
 	ProcessedFields []FieldInfo
 	VersionedFields map[int][]FieldInfo
+	Package         string
 }
 
 type GenerateFileFromTemplateInput struct {
@@ -93,8 +94,7 @@ func (g *Generator) VersionedStructs() error {
 		return err
 	}
 
-	// Append the 'versioned' and struct name to the import path
-	importPath := path.Join(g.Resolver.ImportPath, relativePath, "versioned", g.StructName.Lower)
+	importPath := path.Join(g.Resolver.ImportPath, relativePath)
 
 	for _, f := range node.Decls {
 		genDecl, ok := f.(*ast.GenDecl)
@@ -113,8 +113,8 @@ func (g *Generator) VersionedStructs() error {
 				continue
 			}
 
-			g.Version.IdentifyVersions(structType)
-			if len(g.Version.Versions) == 0 {
+			g.Format.IdentifyVersions(structType)
+			if len(g.Format.Versions) == 0 {
 				return fmt.Errorf("no version tags found in struct")
 			}
 
@@ -132,22 +132,14 @@ func (g *Generator) VersionedStructs() error {
 			g.ProcessedFields = fields
 			g.PrepareVersionedFields()
 
-			// Generate fields.go
-			if err := g.FieldsFile(); err != nil {
-				return err
-			}
-
-			// Generate version.go
-			var versionNumbers []int
-			for v := range g.Version.Versions {
-				versionNumbers = append(versionNumbers, v)
-			}
-			sort.Ints(versionNumbers)
-			if err := g.VersionFile(versionNumbers); err != nil {
-				return err
-			}
-
+			// Generate versioned struct files
 			err = g.StructFile(imports, importPath)
+			if err != nil {
+				return err
+			}
+
+			// Generate types.go file
+			err = g.TypesFile(importPath)
 			if err != nil {
 				return err
 			}
@@ -161,7 +153,7 @@ func (g *Generator) VersionedStructs() error {
 
 func (g *Generator) PrepareVersionedFields() {
 	versionedFields := make(map[int][]FieldInfo)
-	for version, versionedFieldStrs := range g.Version.Versions {
+	for version, versionedFieldStrs := range g.Format.Versions {
 		var versionFieldInfos []FieldInfo
 
 		for _, versionedFieldStr := range versionedFieldStrs {
@@ -196,7 +188,7 @@ func (g *Generator) ProcessFieldInfo(structType *ast.StructType) ([]FieldInfo, i
 		}
 
 		fieldName := field.Names[0].Name
-		fieldType := formatFieldType(field.Type, true)
+		fieldType := g.Format.FieldType(field.Type, true)
 
 		fieldInfo := FieldInfo{
 			Name: fieldName,
@@ -206,7 +198,7 @@ func (g *Generator) ProcessFieldInfo(structType *ast.StructType) ([]FieldInfo, i
 		if field.Tag != nil {
 			tagValue := field.Tag.Value
 			tag := tagValue[1 : len(tagValue)-1] // Extract tag string without quotes
-			filteredTag := g.Version.ExcludeVersionTag(tag)
+			filteredTag := g.Format.ExcludeVersionTag(tag)
 			if filteredTag != "" {
 				fieldInfo.Tag = filteredTag
 			}

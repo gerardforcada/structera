@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/stoewer/go-strcase"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,6 +12,7 @@ import (
 type Module string
 
 const (
+	ModuleFolder  Module = "version"
 	ModuleVersion Module = "0.2.3-beta"
 	ModulePackage Module = "github.com/gerardforcada/structera"
 )
@@ -83,14 +85,16 @@ func cli() {
 	}
 
 	generator := Generator{
-		Version:  &Version{},
+		Format:   &Format{},
 		Resolver: &Resolver{},
 		Filename: fileName,
 		StructName: StructName{
 			Original: structName,
 			Lower:    strings.ToLower(structName),
+			Snake:    strcase.SnakeCase(structName),
 		},
 		OutputDir: outputDir,
+		Package:   string(ModuleFolder),
 	}
 
 	if err := generator.VersionedStructs(); err != nil {

@@ -1,16 +1,18 @@
-package version
+package detector
 
-import "reflect"
+import (
+	"github.com/gerardforcada/structera/interfaces"
+	"reflect"
+)
 
-func DetectBestMatch[V any, T Entity[V]](entity T) V {
-	var bestVersion V
-	base := entity.GetBaseStruct()
+func BestMatchingEra[T interfaces.Hub](hub T) (bestEra int) {
+	base := hub.GetBaseStruct()
 	baseValue := reflect.ValueOf(base)
 	baseType := baseValue.Type()
 
 	highestScore := 0
 
-	for _, v := range entity.GetVersionStructs() {
+	for _, v := range hub.GetVersionStructs() {
 		score := 0
 		candidateValue := reflect.ValueOf(v)
 		candidateType := candidateValue.Type()
@@ -38,9 +40,9 @@ func DetectBestMatch[V any, T Entity[V]](entity T) V {
 
 		if score > highestScore {
 			highestScore = score
-			bestVersion = v.GetVersion()
+			bestEra = v.GetVersion()
 		}
 	}
 
-	return bestVersion
+	return bestEra
 }

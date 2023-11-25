@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/aws/smithy-go v1.17.0
+	github.com/stoewer/go-strcase v1.3.0
 	github.com/stretchr/testify v1.8.4
 )
 

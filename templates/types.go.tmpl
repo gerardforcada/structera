@@ -1,0 +1,24 @@
+package {{.PackageName}}
+
+import (
+    "fmt"
+    "{{.ModulePackage}}/interfaces"
+)
+
+type Type string
+
+const (
+{{- range $camelCase, $snakeCase := .FileNameMap}}
+    Type{{$camelCase}} Type = "{{$snakeCase}}"
+{{- end}}
+)
+
+func GetHubFromType(t Type) (interfaces.Hub, error) {
+    switch t {
+{{- range $camelCase, $snakeCase := .FileNameMap}}
+    case Type{{$camelCase}}:
+        return {{$camelCase}}{}, nil
+{{- end}}
+    }
+    return nil, fmt.Errorf("unknown type %s", t)
+}
