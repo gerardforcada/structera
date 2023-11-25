@@ -13,7 +13,7 @@ type Module string
 
 const (
 	ModuleFolder  Module = "version"
-	ModuleVersion Module = "0.2.3-beta"
+	ModuleVersion Module = "0.3.0-beta"
 	ModulePackage Module = "github.com/gerardforcada/structera"
 )
 
