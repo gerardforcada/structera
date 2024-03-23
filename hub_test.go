@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestGenerator_StructFile(t *testing.T) {
+func TestGenerator_HubFile(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "test")
 	assert.NoError(t, err)
 

@@ -18,7 +18,6 @@ func (g *Generator) EraFile(existingImports []string, version int, fields []HubF
 	if err := os.MkdirAll(versionedDir, os.ModePerm); err != nil {
 		return err
 	}
-
 	if _, err := os.Stat(filepath.Join(versionedDir, fmt.Sprintf("v%d.go", version))); err == nil {
 		if !g.Replace {
 			fmt.Printf("Skipping existing versioned %s struct file: v%d.go\n", g.StructName.Original, version)

@@ -18,10 +18,16 @@ const (
 )
 
 func main() {
-	cli()
+	if err := cli(flag.CommandLine); err != nil {
+		_, err = fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		if err != nil {
+			panic(err)
+		}
+		os.Exit(1)
+	}
 }
 
-func cli() {
+func cli(flagset *flag.FlagSet) error {
 	var (
 		fileName    string
 		structName  string
@@ -32,29 +38,32 @@ func cli() {
 	)
 
 	// Define both long and short flag versions
-	flag.StringVar(&fileName, "file", "", "Path to the Go file containing the struct")
-	flag.StringVar(&fileName, "f", "", "Path to the Go file containing the struct (shorthand)")
+	flagset.StringVar(&fileName, "file", "", "Path to the Go file containing the struct")
+	flagset.StringVar(&fileName, "f", "", "Path to the Go file containing the struct (shorthand)")
 
-	flag.StringVar(&structName, "struct", "", "Name of the struct")
-	flag.StringVar(&structName, "s", "", "Name of the struct (shorthand)")
+	flagset.StringVar(&structName, "struct", "", "Name of the struct")
+	flagset.StringVar(&structName, "s", "", "Name of the struct (shorthand)")
 
-	flag.StringVar(&outputDir, "output", "", "Output directory (optional)")
-	flag.StringVar(&outputDir, "o", "", "Output directory (optional) (shorthand)")
+	flagset.StringVar(&outputDir, "output", "", "Output directory (optional)")
+	flagset.StringVar(&outputDir, "o", "", "Output directory (optional) (shorthand)")
 
-	flag.BoolVar(&showHelp, "help", false, "Print the help page and exit")
-	flag.BoolVar(&showHelp, "h", false, "Print the help page and exit (shorthand)")
+	flagset.BoolVar(&showHelp, "help", false, "Print the help page and exit")
+	flagset.BoolVar(&showHelp, "h", false, "Print the help page and exit (shorthand)")
 
-	flag.BoolVar(&showVersion, "version", false, "Print the version of Structera and exit")
-	flag.BoolVar(&showVersion, "v", false, "Print the version of Structera and exit (shorthand)")
+	flagset.BoolVar(&showVersion, "version", false, "Print the version of Structera and exit")
+	flagset.BoolVar(&showVersion, "v", false, "Print the version of Structera and exit (shorthand)")
 
-	flag.BoolVar(&force, "force", false, "Replace existing versioned struct files")
-	flag.BoolVar(&force, "F", false, "Replace existing versioned struct files (shorthand)")
+	flagset.BoolVar(&force, "force", false, "Replace existing versioned struct files")
+	flagset.BoolVar(&force, "F", false, "Replace existing versioned struct files (shorthand)")
 
-	flag.Parse()
+	err := flagset.Parse(os.Args[1:])
+	if err != nil {
+		return err
+	}
 
 	if showVersion {
 		fmt.Printf("Structera version %s\n", ModuleVersion)
-		os.Exit(0)
+		return nil
 	}
 
 	// Check if the required flags are set
@@ -80,9 +89,9 @@ func cli() {
 		fmt.Println()
 
 		if showHelp {
-			os.Exit(0)
+			return nil
 		}
-		os.Exit(1)
+		return fmt.Errorf("missing required flags")
 	}
 
 	if outputDir == "" {
@@ -104,9 +113,9 @@ func cli() {
 	}
 
 	if err := generator.VersionedStructs(); err != nil {
-		fmt.Printf("Error: %v\n", err)
-		os.Exit(1)
+		return err
 	}
 
 	fmt.Println("Versioned structs generated successfully.")
+	return nil
 }

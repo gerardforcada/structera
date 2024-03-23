@@ -104,4 +104,20 @@ func TestToEra(t *testing.T) {
 			t.Error("Expected error for nil pointer target, got none")
 		}
 	})
+
+	t.Run("NoValidHub", func(t *testing.T) {
+		var era interfaces.Era = mockEra{}
+		err := ToEra(&era, nil)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
+
+	t.Run("NoEraInterface", func(t *testing.T) {
+		var era mockEra
+		err := ToEra(&era, nil)
+		if err != nil {
+			t.Errorf("Expected no error, got %v", err)
+		}
+	})
 }
