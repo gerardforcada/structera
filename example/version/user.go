@@ -2,9 +2,11 @@ package version
 
 import (
     "fmt"
+    "encoding/json"
+    "github.com/gerardforcada/structera/conversor"
     "github.com/gerardforcada/structera/detector"
     "github.com/gerardforcada/structera/interfaces"
-    
+    "github.com/gerardforcada/structera/example/version/user"
 )
 
 type UserAllFields struct {
@@ -17,27 +19,19 @@ type UserAllFields struct {
     WorksWithMaps     *map[string]int64
     AndMapsInMaps     *map[string]map[string]int64
     AndSlices         *[]int
-    AndPointers       *int
-    AndDoublePointers *int
+    AndPointers       **int
+    AndDoublePointers ***int
     AndGenerics       *any
     AndOldGenerics    *any
 }
 
-const (
-    UserVersion1 int = 1
-    UserVersion2 int = 2
-    UserVersion3 int = 3
-    UserVersion4 int = 4
-    UserVersion5 int = 5
-)
-
 // UserVersions struct
 type UserVersions struct {
-    V1 UserV1
-    V2 UserV2
-    V3 UserV3
-    V4 UserV4
-    V5 UserV5
+    V1 user.V1
+    V2 user.V2
+    V3 user.V3
+    V4 user.V4
+    V5 user.V5
 }
 
 // User struct
@@ -49,32 +43,36 @@ type User struct {
 // GetVersionStructs method for the struct
 func (hub User) GetVersionStructs() []interfaces.Era {
     return []interfaces.Era{
-        UserV1{},
-        UserV2{},
-        UserV3{},
-        UserV4{},
-        UserV5{},
+        user.V1{},
+        user.V2{},
+        user.V3{},
+        user.V4{},
+        user.V5{},
     }
 }
 
 func (hub User) GetEraFromVersion(version int) (interfaces.Era, error) {
     switch version {
-    case UserVersion1:
+    case user.V1{}.GetVersion():
         return hub.UserVersions.V1, nil
-    case UserVersion2:
+    case user.V2{}.GetVersion():
         return hub.UserVersions.V2, nil
-    case UserVersion3:
+    case user.V3{}.GetVersion():
         return hub.UserVersions.V3, nil
-    case UserVersion4:
+    case user.V4{}.GetVersion():
         return hub.UserVersions.V4, nil
-    case UserVersion5:
+    case user.V5{}.GetVersion():
         return hub.UserVersions.V5, nil
     default:
         return nil, fmt.Errorf("unknown version %d", version)
     }
 }
 
-func (hub User) GetBaseStruct() interface{} {
+func (hub User) ToEra(target any) error {
+    return conversor.ToEra(target, hub)
+}
+
+func (hub User) GetBaseStruct() any {
     return hub.UserAllFields
 }
 
@@ -84,214 +82,42 @@ func (hub User) DetectVersion() int {
 
 func (hub User) GetVersions() []int {
     return []int{
-        UserVersion1,
-        UserVersion2,
-        UserVersion3,
-        UserVersion4,
-        UserVersion5,
+        user.V1{}.GetVersion(),
+        user.V2{}.GetVersion(),
+        user.V3{}.GetVersion(),
+        user.V4{}.GetVersion(),
+        user.V5{}.GetVersion(),
     }
 }
 
 func (hub User) GetMinVersion() int {
-    return UserVersion1
+    return user.V1{}.GetVersion()
 }
 
 func (hub User) GetMaxVersion() int {
-    return UserVersion5
-}
-// UserV1 Version-specific struct types and methods
-type UserV1 struct {
-    InEveryVersion    string `json:"in_every_version"`
-    OnlyIn1           int `json:"only_in_1"`
-    FromStartTo3      []byte `json:"from_start_to_3"`
-    From1to4          float32 `json:"from_1_to_4"`
-    WorksWithMaps     map[string]int64
-    AndMapsInMaps     map[string]map[string]int64
-    AndSlices         []int
-    AndPointers       int
-    AndDoublePointers int
-    AndGenerics       any
-    AndOldGenerics    any
+    return user.V5{}.GetVersion()
 }
 
-func (era UserV1) GetVersion() int {
-    return UserVersion1
-}
-
-func (era UserV1) GetName() string {
-    return "user"
-}
-
-func (era UserV1) GetHub() interfaces.Hub {
-    return User{
-        UserAllFields: UserAllFields{
-            InEveryVersion: &era.InEveryVersion,
-            OnlyIn1: &era.OnlyIn1,
-            FromStartTo3: &era.FromStartTo3,
-            From1to4: &era.From1to4,
-            WorksWithMaps: &era.WorksWithMaps,
-            AndMapsInMaps: &era.AndMapsInMaps,
-            AndSlices: &era.AndSlices,
-            AndPointers: &era.AndPointers,
-            AndDoublePointers: &era.AndDoublePointers,
-            AndGenerics: &era.AndGenerics,
-            AndOldGenerics: &era.AndOldGenerics,
-        },
+func (hub *User) FillEra(era interfaces.Era, version int) error {
+    eraJSON, err := json.Marshal(era)
+    if err != nil {
+        return fmt.Errorf("error marshalling era: %w", err)
     }
-}
-// UserV2 Version-specific struct types and methods
-type UserV2 struct {
-    InEveryVersion    string `json:"in_every_version"`
-    From2ToEnd        uint8 `json:"from_2_to_end"`
-    FromStartTo3      []byte `json:"from_start_to_3"`
-    From1to4          float32 `json:"from_1_to_4"`
-    WorksWithMaps     map[string]int64
-    AndMapsInMaps     map[string]map[string]int64
-    AndSlices         []int
-    AndPointers       int
-    AndDoublePointers int
-    AndGenerics       any
-    AndOldGenerics    any
-}
 
-func (era UserV2) GetVersion() int {
-    return UserVersion2
-}
-
-func (era UserV2) GetName() string {
-    return "user"
-}
-
-func (era UserV2) GetHub() interfaces.Hub {
-    return User{
-        UserAllFields: UserAllFields{
-            InEveryVersion: &era.InEveryVersion,
-            From2ToEnd: &era.From2ToEnd,
-            FromStartTo3: &era.FromStartTo3,
-            From1to4: &era.From1to4,
-            WorksWithMaps: &era.WorksWithMaps,
-            AndMapsInMaps: &era.AndMapsInMaps,
-            AndSlices: &era.AndSlices,
-            AndPointers: &era.AndPointers,
-            AndDoublePointers: &era.AndDoublePointers,
-            AndGenerics: &era.AndGenerics,
-            AndOldGenerics: &era.AndOldGenerics,
-        },
+    switch version {
+    case user.V1{}.GetVersion():
+        err = json.Unmarshal(eraJSON, &hub.UserVersions.V1)
+    case user.V2{}.GetVersion():
+        err = json.Unmarshal(eraJSON, &hub.UserVersions.V2)
+    case user.V3{}.GetVersion():
+        err = json.Unmarshal(eraJSON, &hub.UserVersions.V3)
+    case user.V4{}.GetVersion():
+        err = json.Unmarshal(eraJSON, &hub.UserVersions.V4)
+    case user.V5{}.GetVersion():
+        err = json.Unmarshal(eraJSON, &hub.UserVersions.V5)
+    default:
+        return fmt.Errorf("unknown version %d", version)
     }
-}
-// UserV3 Version-specific struct types and methods
-type UserV3 struct {
-    InEveryVersion    string `json:"in_every_version"`
-    From2ToEnd        uint8 `json:"from_2_to_end"`
-    FromStartTo3      []byte `json:"from_start_to_3"`
-    From1to4          float32 `json:"from_1_to_4"`
-    WorksWithMaps     map[string]int64
-    AndMapsInMaps     map[string]map[string]int64
-    AndSlices         []int
-    AndPointers       int
-    AndDoublePointers int
-    AndGenerics       any
-    AndOldGenerics    any
-}
 
-func (era UserV3) GetVersion() int {
-    return UserVersion3
-}
-
-func (era UserV3) GetName() string {
-    return "user"
-}
-
-func (era UserV3) GetHub() interfaces.Hub {
-    return User{
-        UserAllFields: UserAllFields{
-            InEveryVersion: &era.InEveryVersion,
-            From2ToEnd: &era.From2ToEnd,
-            FromStartTo3: &era.FromStartTo3,
-            From1to4: &era.From1to4,
-            WorksWithMaps: &era.WorksWithMaps,
-            AndMapsInMaps: &era.AndMapsInMaps,
-            AndSlices: &era.AndSlices,
-            AndPointers: &era.AndPointers,
-            AndDoublePointers: &era.AndDoublePointers,
-            AndGenerics: &era.AndGenerics,
-            AndOldGenerics: &era.AndOldGenerics,
-        },
-    }
-}
-// UserV4 Version-specific struct types and methods
-type UserV4 struct {
-    InEveryVersion    string `json:"in_every_version"`
-    From2ToEnd        uint8 `json:"from_2_to_end"`
-    From1to4          float32 `json:"from_1_to_4"`
-    WorksWithMaps     map[string]int64
-    AndMapsInMaps     map[string]map[string]int64
-    AndSlices         []int
-    AndPointers       int
-    AndDoublePointers int
-    AndGenerics       any
-    AndOldGenerics    any
-}
-
-func (era UserV4) GetVersion() int {
-    return UserVersion4
-}
-
-func (era UserV4) GetName() string {
-    return "user"
-}
-
-func (era UserV4) GetHub() interfaces.Hub {
-    return User{
-        UserAllFields: UserAllFields{
-            InEveryVersion: &era.InEveryVersion,
-            From2ToEnd: &era.From2ToEnd,
-            From1to4: &era.From1to4,
-            WorksWithMaps: &era.WorksWithMaps,
-            AndMapsInMaps: &era.AndMapsInMaps,
-            AndSlices: &era.AndSlices,
-            AndPointers: &era.AndPointers,
-            AndDoublePointers: &era.AndDoublePointers,
-            AndGenerics: &era.AndGenerics,
-            AndOldGenerics: &era.AndOldGenerics,
-        },
-    }
-}
-// UserV5 Version-specific struct types and methods
-type UserV5 struct {
-    InEveryVersion    string `json:"in_every_version"`
-    From2ToEnd        uint8 `json:"from_2_to_end"`
-    OnlyIn5           rune `json:"only_in_5"`
-    WorksWithMaps     map[string]int64
-    AndMapsInMaps     map[string]map[string]int64
-    AndSlices         []int
-    AndPointers       int
-    AndDoublePointers int
-    AndGenerics       any
-    AndOldGenerics    any
-}
-
-func (era UserV5) GetVersion() int {
-    return UserVersion5
-}
-
-func (era UserV5) GetName() string {
-    return "user"
-}
-
-func (era UserV5) GetHub() interfaces.Hub {
-    return User{
-        UserAllFields: UserAllFields{
-            InEveryVersion: &era.InEveryVersion,
-            From2ToEnd: &era.From2ToEnd,
-            OnlyIn5: &era.OnlyIn5,
-            WorksWithMaps: &era.WorksWithMaps,
-            AndMapsInMaps: &era.AndMapsInMaps,
-            AndSlices: &era.AndSlices,
-            AndPointers: &era.AndPointers,
-            AndDoublePointers: &era.AndDoublePointers,
-            AndGenerics: &era.AndGenerics,
-            AndOldGenerics: &era.AndOldGenerics,
-        },
-    }
+    return err
 }

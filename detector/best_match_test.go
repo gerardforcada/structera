@@ -3,6 +3,7 @@ package detector
 import (
 	"fmt"
 	"github.com/aws/smithy-go/ptr"
+	"github.com/gerardforcada/structera/conversor"
 	"github.com/gerardforcada/structera/interfaces"
 	"reflect"
 	"testing"
@@ -41,7 +42,7 @@ func (d MockEntity) GetVersionStructs() []interfaces.Era {
 	}
 }
 
-func (d MockEntity) GetBaseStruct() interface{} {
+func (d MockEntity) GetBaseStruct() any {
 	return d.MockEntityAllFields
 }
 
@@ -54,6 +55,10 @@ func (d MockEntity) GetVersions() []int {
 		Version1,
 		Version2,
 	}
+}
+
+func (d MockEntity) ToEra(target any) error {
+	return conversor.ToEra(target, d)
 }
 
 func (d MockEntity) GetMinVersion() int {

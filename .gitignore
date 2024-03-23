@@ -1,2 +1,4 @@
 # Ignore build files
 structera-*
+covprofile
+test.go

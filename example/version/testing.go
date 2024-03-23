@@ -2,9 +2,11 @@ package version
 
 import (
     "fmt"
+    "encoding/json"
+    "github.com/gerardforcada/structera/conversor"
     "github.com/gerardforcada/structera/detector"
     "github.com/gerardforcada/structera/interfaces"
-    
+    "github.com/gerardforcada/structera/example/version/testing"
 )
 
 type TestingAllFields struct {
@@ -15,19 +17,12 @@ type TestingAllFields struct {
     From1to4       *float32 `json:"from_1_to_4"`
 }
 
-const (
-    TestingVersion1 int = 1
-    TestingVersion2 int = 2
-    TestingVersion3 int = 3
-    TestingVersion4 int = 4
-)
-
 // TestingVersions struct
 type TestingVersions struct {
-    V1 TestingV1
-    V2 TestingV2
-    V3 TestingV3
-    V4 TestingV4
+    V1 testing.V1
+    V2 testing.V2
+    V3 testing.V3
+    V4 testing.V4
 }
 
 // Testing struct
@@ -39,29 +34,33 @@ type Testing struct {
 // GetVersionStructs method for the struct
 func (hub Testing) GetVersionStructs() []interfaces.Era {
     return []interfaces.Era{
-        TestingV1{},
-        TestingV2{},
-        TestingV3{},
-        TestingV4{},
+        testing.V1{},
+        testing.V2{},
+        testing.V3{},
+        testing.V4{},
     }
 }
 
 func (hub Testing) GetEraFromVersion(version int) (interfaces.Era, error) {
     switch version {
-    case TestingVersion1:
+    case testing.V1{}.GetVersion():
         return hub.TestingVersions.V1, nil
-    case TestingVersion2:
+    case testing.V2{}.GetVersion():
         return hub.TestingVersions.V2, nil
-    case TestingVersion3:
+    case testing.V3{}.GetVersion():
         return hub.TestingVersions.V3, nil
-    case TestingVersion4:
+    case testing.V4{}.GetVersion():
         return hub.TestingVersions.V4, nil
     default:
         return nil, fmt.Errorf("unknown version %d", version)
     }
 }
 
-func (hub Testing) GetBaseStruct() interface{} {
+func (hub Testing) ToEra(target any) error {
+    return conversor.ToEra(target, hub)
+}
+
+func (hub Testing) GetBaseStruct() any {
     return hub.TestingAllFields
 }
 
@@ -71,119 +70,39 @@ func (hub Testing) DetectVersion() int {
 
 func (hub Testing) GetVersions() []int {
     return []int{
-        TestingVersion1,
-        TestingVersion2,
-        TestingVersion3,
-        TestingVersion4,
+        testing.V1{}.GetVersion(),
+        testing.V2{}.GetVersion(),
+        testing.V3{}.GetVersion(),
+        testing.V4{}.GetVersion(),
     }
 }
 
 func (hub Testing) GetMinVersion() int {
-    return TestingVersion1
+    return testing.V1{}.GetVersion()
 }
 
 func (hub Testing) GetMaxVersion() int {
-    return TestingVersion4
-}
-// TestingV1 Version-specific struct types and methods
-type TestingV1 struct {
-    InEveryVersion string `json:"in_every_version"`
-    OnlyIn1        int `json:"only_in_1"`
-    FromStartTo3   []byte `json:"from_start_to_3"`
-    From1to4       float32 `json:"from_1_to_4"`
+    return testing.V4{}.GetVersion()
 }
 
-func (era TestingV1) GetVersion() int {
-    return TestingVersion1
-}
-
-func (era TestingV1) GetName() string {
-    return "testing"
-}
-
-func (era TestingV1) GetHub() interfaces.Hub {
-    return Testing{
-        TestingAllFields: TestingAllFields{
-            InEveryVersion: &era.InEveryVersion,
-            OnlyIn1: &era.OnlyIn1,
-            FromStartTo3: &era.FromStartTo3,
-            From1to4: &era.From1to4,
-        },
+func (hub *Testing) FillEra(era interfaces.Era, version int) error {
+    eraJSON, err := json.Marshal(era)
+    if err != nil {
+        return fmt.Errorf("error marshalling era: %w", err)
     }
-}
-// TestingV2 Version-specific struct types and methods
-type TestingV2 struct {
-    InEveryVersion string `json:"in_every_version"`
-    From2ToEnd     uint8 `json:"from_2_to_end"`
-    FromStartTo3   []byte `json:"from_start_to_3"`
-    From1to4       float32 `json:"from_1_to_4"`
-}
 
-func (era TestingV2) GetVersion() int {
-    return TestingVersion2
-}
-
-func (era TestingV2) GetName() string {
-    return "testing"
-}
-
-func (era TestingV2) GetHub() interfaces.Hub {
-    return Testing{
-        TestingAllFields: TestingAllFields{
-            InEveryVersion: &era.InEveryVersion,
-            From2ToEnd: &era.From2ToEnd,
-            FromStartTo3: &era.FromStartTo3,
-            From1to4: &era.From1to4,
-        },
+    switch version {
+    case testing.V1{}.GetVersion():
+        err = json.Unmarshal(eraJSON, &hub.TestingVersions.V1)
+    case testing.V2{}.GetVersion():
+        err = json.Unmarshal(eraJSON, &hub.TestingVersions.V2)
+    case testing.V3{}.GetVersion():
+        err = json.Unmarshal(eraJSON, &hub.TestingVersions.V3)
+    case testing.V4{}.GetVersion():
+        err = json.Unmarshal(eraJSON, &hub.TestingVersions.V4)
+    default:
+        return fmt.Errorf("unknown version %d", version)
     }
-}
-// TestingV3 Version-specific struct types and methods
-type TestingV3 struct {
-    InEveryVersion string `json:"in_every_version"`
-    From2ToEnd     uint8 `json:"from_2_to_end"`
-    FromStartTo3   []byte `json:"from_start_to_3"`
-    From1to4       float32 `json:"from_1_to_4"`
-}
 
-func (era TestingV3) GetVersion() int {
-    return TestingVersion3
-}
-
-func (era TestingV3) GetName() string {
-    return "testing"
-}
-
-func (era TestingV3) GetHub() interfaces.Hub {
-    return Testing{
-        TestingAllFields: TestingAllFields{
-            InEveryVersion: &era.InEveryVersion,
-            From2ToEnd: &era.From2ToEnd,
-            FromStartTo3: &era.FromStartTo3,
-            From1to4: &era.From1to4,
-        },
-    }
-}
-// TestingV4 Version-specific struct types and methods
-type TestingV4 struct {
-    InEveryVersion string `json:"in_every_version"`
-    From2ToEnd     uint8 `json:"from_2_to_end"`
-    From1to4       float32 `json:"from_1_to_4"`
-}
-
-func (era TestingV4) GetVersion() int {
-    return TestingVersion4
-}
-
-func (era TestingV4) GetName() string {
-    return "testing"
-}
-
-func (era TestingV4) GetHub() interfaces.Hub {
-    return Testing{
-        TestingAllFields: TestingAllFields{
-            InEveryVersion: &era.InEveryVersion,
-            From2ToEnd: &era.From2ToEnd,
-            From1to4: &era.From1to4,
-        },
-    }
+    return err
 }

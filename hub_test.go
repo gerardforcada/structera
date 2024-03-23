@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestGenerator_StructFile(t *testing.T) {
+func TestGenerator_HubFile(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "test")
 	assert.NoError(t, err)
 
@@ -22,9 +22,9 @@ func TestGenerator_StructFile(t *testing.T) {
 		StructName      StructName
 		OutputDir       string
 		Format          *Format
-		VersionedFields map[int][]FieldInfo
+		VersionedFields map[int][]HubFieldInfo
 		Package         string
-		ProcessedFields []FieldInfo
+		ProcessedFields []HubFieldInfo
 	}
 	tests := []struct {
 		name            string
@@ -52,7 +52,7 @@ func TestGenerator_StructFile(t *testing.T) {
 					},
 					SortedVersions: []int{1, 2, 3, 4},
 				},
-				VersionedFields: map[int][]FieldInfo{
+				VersionedFields: map[int][]HubFieldInfo{
 					1: {
 						{
 							Name:          "InEveryVersion",
@@ -153,7 +153,7 @@ func TestGenerator_StructFile(t *testing.T) {
 					},
 				},
 				Package: string(ModuleFolder),
-				ProcessedFields: []FieldInfo{
+				ProcessedFields: []HubFieldInfo{
 					{FormattedName: "InEveryVersion", Type: "*string", Tag: "json:\"in_every_version\""},
 					{FormattedName: "OnlyIn1", Type: "       *int", Tag: "json:\"only_in_1\""},
 					{FormattedName: "From2ToEnd", Type: "    *uint8", Tag: "json:\"from_2_to_end\""},
@@ -162,7 +162,7 @@ func TestGenerator_StructFile(t *testing.T) {
 				},
 			},
 			existingImports: []string{},
-			importPath:      "github.com/gerardforcada/structera/example/eras/testing",
+			importPath:      "github.com/gerardforcada/structera/example",
 			wantErr:         false,
 			wantMatch:       true,
 		},
@@ -184,7 +184,7 @@ func TestGenerator_StructFile(t *testing.T) {
 					},
 					SortedVersions: []int{1, 2, 3, 4},
 				},
-				VersionedFields: map[int][]FieldInfo{
+				VersionedFields: map[int][]HubFieldInfo{
 					1: {
 						{
 							Name:          "InEveryVersion",
@@ -239,7 +239,7 @@ func TestGenerator_StructFile(t *testing.T) {
 					},
 				},
 				Package: string(ModuleFolder),
-				ProcessedFields: []FieldInfo{
+				ProcessedFields: []HubFieldInfo{
 					{FormattedName: "InEveryVersion", Type: "*string"},
 					{FormattedName: "OnlyIn1", Type: "*int"},
 					{FormattedName: "FromStartTo3", Type: "[]byte"},
@@ -248,7 +248,7 @@ func TestGenerator_StructFile(t *testing.T) {
 				},
 			},
 			existingImports: []string{"test"},
-			importPath:      "github.com/gerardforcada/structera/example/eras/testing",
+			importPath:      "github.com/gerardforcada/structera/example",
 			wantErr:         false,
 			wantMatch:       false,
 		},
@@ -265,8 +265,8 @@ func TestGenerator_StructFile(t *testing.T) {
 				ProcessedFields: tt.fields.ProcessedFields,
 			}
 
-			if err := g.StructFile(tt.existingImports, tt.importPath); (err != nil) != tt.wantErr {
-				t.Errorf("StructFile() error = %v, wantErr %v", err, tt.wantErr)
+			if err := g.HubFile(tt.existingImports, tt.importPath); (err != nil) != tt.wantErr {
+				t.Errorf("HubFile() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			// Path to the generated file

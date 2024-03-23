@@ -7,5 +7,6 @@ type Hub interface {
 	GetEraFromVersion(int) (Era, error)
 	GetVersions() []int
 	GetVersionStructs() []Era
-	GetBaseStruct() interface{}
+	GetBaseStruct() any
+	ToEra(any) error
 }

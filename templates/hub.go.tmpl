@@ -1,0 +1,99 @@
+package {{.PackageName}}
+
+import (
+    "fmt"
+    "encoding/json"
+    "{{.ModulePackage}}/conversor"
+    "{{.ModulePackage}}/detector"
+    "{{.ModulePackage}}/interfaces"
+    "{{.ImportPath}}/version/{{$.StructName.Snake}}"
+
+{{- range .ExistingImports}}
+    "{{.}}"
+{{- end}}
+)
+
+type {{.StructName.Original}}AllFields struct {
+{{- range .Fields}}
+    {{.FormattedName}} {{.Type}}{{if .Tag}} `{{.Tag}}`{{end}}
+{{- end}}
+}
+
+// {{$.StructName.Original}}Versions struct
+type {{.StructName.Original}}Versions struct {
+{{- range .Versions}}
+    V{{.}} {{$.StructName.Snake}}.V{{.}}
+{{- end}}
+}
+
+// {{$.StructName.Original}} struct
+type {{.StructName.Original}} struct {
+    {{.StructName.Original}}AllFields
+    {{.StructName.Original}}Versions
+}
+
+// GetVersionStructs method for the struct
+func (hub {{.StructName.Original}}) GetVersionStructs() []interfaces.Era {
+    return []interfaces.Era{
+    {{- range .Versions}}
+        {{$.StructName.Snake}}.V{{.}}{},
+    {{- end}}
+    }
+}
+
+func (hub {{.StructName.Original}}) GetEraFromVersion(version int) (interfaces.Era, error) {
+    switch version {
+    {{- range .Versions}}
+    case {{$.StructName.Snake}}.V{{.}}{}.GetVersion():
+        return hub.{{$.StructName.Original}}Versions.V{{.}}, nil
+    {{- end}}
+    default:
+        return nil, fmt.Errorf("unknown version %d", version)
+    }
+}
+
+func (hub {{.StructName.Original}}) ToEra(target any) error {
+    return conversor.ToEra(target, hub)
+}
+
+func (hub {{.StructName.Original}}) GetBaseStruct() any {
+    return hub.{{.StructName.Original}}AllFields
+}
+
+func (hub {{.StructName.Original}}) DetectVersion() int {
+    return detector.BestMatchingEra[{{.StructName.Original}}](hub)
+}
+
+func (hub {{.StructName.Original}}) GetVersions() []int {
+    return []int{
+    {{- range .Versions}}
+        {{$.StructName.Snake}}.V{{.}}{}.GetVersion(),
+    {{- end}}
+    }
+}
+
+func (hub {{.StructName.Original}}) GetMinVersion() int {
+    return {{.StructName.Snake}}.V1{}.GetVersion()
+}
+
+func (hub {{.StructName.Original}}) GetMaxVersion() int {
+    return {{.StructName.Snake}}.V{{index .Versions (sub (len .Versions) 1)}}{}.GetVersion()
+}
+
+func (hub *{{.StructName.Original}}) FillEra(era interfaces.Era, version int) error {
+    eraJSON, err := json.Marshal(era)
+    if err != nil {
+        return fmt.Errorf("error marshalling era: %w", err)
+    }
+
+    switch version {
+    {{- range .Versions}}
+    case {{$.StructName.Snake}}.V{{.}}{}.GetVersion():
+        err = json.Unmarshal(eraJSON, &hub.{{$.StructName.Original}}Versions.V{{.}})
+    {{- end}}
+    default:
+        return fmt.Errorf("unknown version %d", version)
+    }
+
+    return err
+}
