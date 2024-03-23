@@ -2,6 +2,7 @@ package version
 
 import (
     "fmt"
+    "encoding/json"
     "github.com/gerardforcada/structera/conversor"
     "github.com/gerardforcada/structera/detector"
     "github.com/gerardforcada/structera/interfaces"
@@ -95,4 +96,28 @@ func (hub User) GetMinVersion() int {
 
 func (hub User) GetMaxVersion() int {
     return user.V5{}.GetVersion()
+}
+
+func (hub *User) FillEra(era interfaces.Era, version int) error {
+    eraJSON, err := json.Marshal(era)
+    if err != nil {
+        return fmt.Errorf("error marshalling era: %w", err)
+    }
+
+    switch version {
+    case user.V1{}.GetVersion():
+        err = json.Unmarshal(eraJSON, &hub.UserVersions.V1)
+    case user.V2{}.GetVersion():
+        err = json.Unmarshal(eraJSON, &hub.UserVersions.V2)
+    case user.V3{}.GetVersion():
+        err = json.Unmarshal(eraJSON, &hub.UserVersions.V3)
+    case user.V4{}.GetVersion():
+        err = json.Unmarshal(eraJSON, &hub.UserVersions.V4)
+    case user.V5{}.GetVersion():
+        err = json.Unmarshal(eraJSON, &hub.UserVersions.V5)
+    default:
+        return fmt.Errorf("unknown version %d", version)
+    }
+
+    return err
 }

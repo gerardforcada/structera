@@ -2,6 +2,7 @@ package {{.PackageName}}
 
 import (
     "fmt"
+    "encoding/json"
     "{{.ModulePackage}}/conversor"
     "{{.ModulePackage}}/detector"
     "{{.ModulePackage}}/interfaces"
@@ -77,4 +78,22 @@ func (hub {{.StructName.Original}}) GetMinVersion() int {
 
 func (hub {{.StructName.Original}}) GetMaxVersion() int {
     return {{.StructName.Snake}}.V{{index .Versions (sub (len .Versions) 1)}}{}.GetVersion()
+}
+
+func (hub *{{.StructName.Original}}) FillEra(era interfaces.Era, version int) error {
+    eraJSON, err := json.Marshal(era)
+    if err != nil {
+        return fmt.Errorf("error marshalling era: %w", err)
+    }
+
+    switch version {
+    {{- range .Versions}}
+    case {{$.StructName.Snake}}.V{{.}}{}.GetVersion():
+        err = json.Unmarshal(eraJSON, &hub.{{$.StructName.Original}}Versions.V{{.}})
+    {{- end}}
+    default:
+        return fmt.Errorf("unknown version %d", version)
+    }
+
+    return err
 }
