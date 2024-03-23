@@ -55,11 +55,11 @@ func (hub Testing) GetEraFromVersion(version int) (interfaces.Era, error) {
     }
 }
 
-func (hub Testing) ToEra(target interface{}) error {
+func (hub Testing) ToEra(target any) error {
     return conversor.ToEra(target, hub)
 }
 
-func (hub Testing) GetBaseStruct() interface{} {
+func (hub Testing) GetBaseStruct() any {
     return hub.TestingAllFields
 }
 

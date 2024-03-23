@@ -51,11 +51,11 @@ func (hub {{.StructName.Original}}) GetEraFromVersion(version int) (interfaces.E
     }
 }
 
-func (hub {{.StructName.Original}}) ToEra(target interface{}) error {
+func (hub {{.StructName.Original}}) ToEra(target any) error {
     return conversor.ToEra(target, hub)
 }
 
-func (hub {{.StructName.Original}}) GetBaseStruct() interface{} {
+func (hub {{.StructName.Original}}) GetBaseStruct() any {
     return hub.{{.StructName.Original}}AllFields
 }
 

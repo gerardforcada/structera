@@ -42,7 +42,7 @@ func (d MockEntity) GetVersionStructs() []interfaces.Era {
 	}
 }
 
-func (d MockEntity) GetBaseStruct() interface{} {
+func (d MockEntity) GetBaseStruct() any {
 	return d.MockEntityAllFields
 }
 
@@ -57,7 +57,7 @@ func (d MockEntity) GetVersions() []int {
 	}
 }
 
-func (d MockEntity) ToEra(target interface{}) error {
+func (d MockEntity) ToEra(target any) error {
 	return conversor.ToEra(target, d)
 }
 
