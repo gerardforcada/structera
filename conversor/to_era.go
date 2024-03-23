@@ -19,6 +19,7 @@ func ToEra(target any, hub interfaces.Hub) error {
 	}
 
 	if _, ok := target.(*interfaces.Era); ok {
+		fmt.Print("target is era\n")
 		eraType := reflect.TypeOf(target).Elem()
 		if eraType.Kind() == reflect.Interface {
 			eraType = reflect.ValueOf(target).Elem().Elem().Type()
