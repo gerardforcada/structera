@@ -1,0 +1,24 @@
+package {{.StructName.Snake}}
+
+{{- if .ExistingImports}}
+    imports (
+    {{- range .ExistingImports}}
+        "{{.}}"
+    {{- end}}
+    )
+{{- end}}
+
+// V{{.VersionNumber}} Version-specific struct types and methods
+type V{{.VersionNumber}} struct {
+{{- range .Fields}}
+    {{.FormattedName}} {{.Type}}{{if .Tag}} `{{.Tag}}`{{end}}
+{{- end}}
+}
+
+func (era V{{.VersionNumber}}) GetVersion() int {
+    return {{.VersionNumber}}
+}
+
+func (era V{{.VersionNumber}}) GetName() string {
+    return "{{$.StructName.Snake}}"
+}

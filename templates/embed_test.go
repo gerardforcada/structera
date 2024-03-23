@@ -6,7 +6,7 @@ import (
 
 // TestFS checks if the embedded file system can be accessed and specific files exist.
 func TestFS(t *testing.T) {
-	expectedFiles := []string{"struct.go.tmpl", "types.go.tmpl"}
+	expectedFiles := []string{"hub.go.tmpl", "era.go.tmpl", "types.go.tmpl"}
 	notExpectedFiles := []string{"embed_test.go"}
 
 	for _, fileName := range expectedFiles {

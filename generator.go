@@ -26,9 +26,10 @@ type Generator struct {
 	Filename        string
 	StructName      StructName
 	OutputDir       string
-	ProcessedFields []FieldInfo
-	VersionedFields map[int][]FieldInfo
+	ProcessedFields []HubFieldInfo
+	VersionedFields map[int][]HubFieldInfo
 	Package         string
+	Replace         bool
 }
 
 type GenerateFileFromTemplateInput struct {
@@ -133,11 +134,17 @@ func (g *Generator) VersionedStructs() error {
 			g.PrepareVersionedFields()
 
 			// Generate versioned struct files
-			err = g.StructFile(imports, importPath)
+			err = g.HubFile(imports, importPath)
 			if err != nil {
 				return err
 			}
 
+			for version, fields := range g.VersionedFields {
+				err = g.EraFile(imports, version, fields)
+				if err != nil {
+					return err
+				}
+			}
 			// Generate types.go file
 			err = g.TypesFile(importPath)
 			if err != nil {
@@ -152,11 +159,11 @@ func (g *Generator) VersionedStructs() error {
 }
 
 func (g *Generator) PrepareVersionedFields() {
-	versionedFields := make(map[int][]FieldInfo)
-	for version, versionedFieldStrs := range g.Format.Versions {
-		var versionFieldInfos []FieldInfo
+	versionedFields := make(map[int][]HubFieldInfo)
+	for version, versionedFieldStrings := range g.Format.Versions {
+		var versionFieldInfos []HubFieldInfo
 
-		for _, versionedFieldStr := range versionedFieldStrs {
+		for _, versionedFieldStr := range versionedFieldStrings {
 			parts := strings.SplitN(versionedFieldStr, " ", 2)
 			if len(parts) < 2 {
 				continue
@@ -178,8 +185,8 @@ func (g *Generator) PrepareVersionedFields() {
 	g.VersionedFields = versionedFields
 }
 
-func (g *Generator) ProcessFieldInfo(structType *ast.StructType) ([]FieldInfo, int, error) {
-	var fields []FieldInfo
+func (g *Generator) ProcessFieldInfo(structType *ast.StructType) ([]HubFieldInfo, int, error) {
+	var fields []HubFieldInfo
 	maxNameLength := 0
 
 	for _, field := range structType.Fields.List {
@@ -190,7 +197,7 @@ func (g *Generator) ProcessFieldInfo(structType *ast.StructType) ([]FieldInfo, i
 		fieldName := field.Names[0].Name
 		fieldType := g.Format.FieldType(field.Type, true)
 
-		fieldInfo := FieldInfo{
+		fieldInfo := HubFieldInfo{
 			Name: fieldName,
 			Type: fieldType,
 		}

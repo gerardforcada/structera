@@ -13,7 +13,7 @@ type Module string
 
 const (
 	ModuleFolder  Module = "version"
-	ModuleVersion Module = "0.3.0-beta"
+	ModuleVersion Module = "0.4.0-beta"
 	ModulePackage Module = "github.com/gerardforcada/structera"
 )
 
@@ -28,6 +28,7 @@ func cli() {
 		outputDir   string
 		showVersion bool
 		showHelp    bool
+		force       bool
 	)
 
 	// Define both long and short flag versions
@@ -46,6 +47,9 @@ func cli() {
 	flag.BoolVar(&showVersion, "version", false, "Print the version of Structera and exit")
 	flag.BoolVar(&showVersion, "v", false, "Print the version of Structera and exit (shorthand)")
 
+	flag.BoolVar(&force, "force", false, "Replace existing versioned struct files")
+	flag.BoolVar(&force, "F", false, "Replace existing versioned struct files (shorthand)")
+
 	flag.Parse()
 
 	if showVersion {
@@ -63,6 +67,7 @@ func cli() {
 		fmt.Println("  structera --file <path-to-struct-file> --struct <StructName> [--output <output-directory>]")
 		fmt.Println("\nOptions:")
 		fmt.Println("  --file,    -f  Path to the Go file containing the struct")
+		fmt.Println("  --force,   -F  Replace existing versioned struct files")
 		fmt.Println("  --struct,  -s  Name of the struct to version")
 		fmt.Println("  --output,  -o  (Optional) Output directory for the versioned struct files")
 		fmt.Println("  --help,    -h  Prints this page and exit")
@@ -95,6 +100,7 @@ func cli() {
 		},
 		OutputDir: outputDir,
 		Package:   string(ModuleFolder),
+		Replace:   force,
 	}
 
 	if err := generator.VersionedStructs(); err != nil {

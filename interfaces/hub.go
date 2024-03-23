@@ -8,4 +8,5 @@ type Hub interface {
 	GetVersions() []int
 	GetVersionStructs() []Era
 	GetBaseStruct() interface{}
+	ToEra(any) error
 }

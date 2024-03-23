@@ -6,35 +6,35 @@ import (
 	"path/filepath"
 )
 
-type FieldInfo struct {
+type HubFieldInfo struct {
 	Name          string
 	FormattedName string
 	Type          string
 	Tag           string
 }
 
-type VersionedStructTemplateData struct {
+type VersionedHubTemplateData struct {
 	PackageName     string
 	ModulePackage   string
 	ImportPath      string
 	ExistingImports []string
 	StructName      StructName
-	Fields          []FieldInfo
-	VersionedFields map[int][]FieldInfo
+	Fields          []HubFieldInfo
+	VersionedFields map[int][]HubFieldInfo
 	Versions        []int
 	CustomType      bool
 }
 
-func (g *Generator) StructFile(existingImports []string, importPath string) error {
+func (g *Generator) HubFile(existingImports []string, importPath string) error {
 	versionedDir := filepath.Join(g.OutputDir, g.Package)
 	if err := os.MkdirAll(versionedDir, os.ModePerm); err != nil {
 		return err
 	}
 
 	return g.FileFromTemplate(GenerateFileFromTemplateInput{
-		TemplateFilePath: "struct.go.tmpl",
+		TemplateFilePath: "hub.go.tmpl",
 		OutputFilePath:   filepath.Join(versionedDir, fmt.Sprintf("%s.go", g.StructName.Snake)),
-		Data: VersionedStructTemplateData{
+		Data: VersionedHubTemplateData{
 			PackageName:     g.Package,
 			ModulePackage:   string(ModulePackage),
 			ImportPath:      importPath,

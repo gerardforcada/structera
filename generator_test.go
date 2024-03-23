@@ -10,8 +10,8 @@ func TestGenerator_PrepareVersionedFields(t *testing.T) {
 	tests := []struct {
 		name            string
 		format          *Format
-		processedFields []FieldInfo
-		want            map[int][]FieldInfo
+		processedFields []HubFieldInfo
+		want            map[int][]HubFieldInfo
 	}{
 		{
 			name: "Basic Test",
@@ -21,12 +21,12 @@ func TestGenerator_PrepareVersionedFields(t *testing.T) {
 					2: {"Field2 int", "Field3 float64"},
 				},
 			},
-			processedFields: []FieldInfo{
+			processedFields: []HubFieldInfo{
 				{Name: "Field1", Type: "*string"},
 				{Name: "Field2", Type: "*int"},
 				{Name: "Field3", Type: "*float64"},
 			},
-			want: map[int][]FieldInfo{
+			want: map[int][]HubFieldInfo{
 				1: {{Name: "Field1", Type: "string"}, {Name: "Field2", Type: "int"}},
 				2: {{Name: "Field2", Type: "int"}, {Name: "Field3", Type: "float64"}},
 			},
@@ -52,7 +52,7 @@ func TestGenerator_ProcessFieldInfo(t *testing.T) {
 		name           string
 		structType     *ast.StructType
 		format         *Format
-		expectedFields []FieldInfo
+		expectedFields []HubFieldInfo
 		expectedMaxLen int
 	}{
 		{
@@ -77,7 +77,7 @@ func TestGenerator_ProcessFieldInfo(t *testing.T) {
 					},
 				},
 			},
-			expectedFields: []FieldInfo{
+			expectedFields: []HubFieldInfo{
 				{Name: "Field1", Type: "*string", Tag: "json:\"field1\""},
 				{Name: "Field2", Type: "*int"},
 				{Name: "Field3", Type: "*int"},
