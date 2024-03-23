@@ -95,15 +95,15 @@ func TestFormatFieldType(t *testing.T) {
 			expr: &ast.StarExpr{
 				X: &ast.Ident{Name: "*int"},
 			},
-			pointer:  false,
-			expected: "*int",
+			pointer:  true,
+			expected: "***int",
 		},
 		{
-			name: "Pointer to Pointer",
+			name: "Pointer2",
 			expr: &ast.StarExpr{
 				X: &ast.Ident{Name: "*int"},
 			},
-			pointer:  true,
+			pointer:  false,
 			expected: "**int",
 		},
 		{
@@ -113,18 +113,38 @@ func TestFormatFieldType(t *testing.T) {
 					X: &ast.Ident{Name: "**string"},
 				},
 			},
-			pointer:  false,
-			expected: "**string",
+			pointer:  true,
+			expected: "*****string",
 		},
 		{
-			name: "Pointer to Double Pointer",
+			name: "Double Pointer2",
+			expr: &ast.StarExpr{
+				X: &ast.StarExpr{
+					X: &ast.Ident{Name: "**string"},
+				},
+			},
+			pointer:  false,
+			expected: "****string",
+		},
+		{
+			name: "Triple Pointer",
 			expr: &ast.StarExpr{
 				X: &ast.StarExpr{
 					X: &ast.Ident{Name: "**string"},
 				},
 			},
 			pointer:  true,
-			expected: "***string",
+			expected: "*****string",
+		},
+		{
+			name: "Triple Pointer2",
+			expr: &ast.StarExpr{
+				X: &ast.StarExpr{
+					X: &ast.Ident{Name: "**string"},
+				},
+			},
+			pointer:  false,
+			expected: "****string",
 		},
 	}
 

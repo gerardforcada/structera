@@ -18,8 +18,8 @@ type UserAllFields struct {
     WorksWithMaps     *map[string]int64
     AndMapsInMaps     *map[string]map[string]int64
     AndSlices         *[]int
-    AndPointers       *int
-    AndDoublePointers *int
+    AndPointers       **int
+    AndDoublePointers ***int
     AndGenerics       *any
     AndOldGenerics    *any
 }

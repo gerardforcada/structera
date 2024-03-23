@@ -45,8 +45,8 @@ func (f *Format) FieldType(expr ast.Expr, pointer bool) string {
 		result += fmt.Sprintf("map[%s]%s", keyType, valueType)
 	case *ast.StarExpr:
 		// For pointers, simply add an extra star
-		pointedType := f.FieldType(t.X, false)
-		result += fmt.Sprintf("%s", pointedType)
+		pointedType := f.FieldType(t.X, true)
+		result += pointedType
 	case *ast.SelectorExpr:
 		// For qualified identifiers (e.g., time.Time)
 		result += fmt.Sprintf("%s.%s", t.X, t.Sel.Name)
